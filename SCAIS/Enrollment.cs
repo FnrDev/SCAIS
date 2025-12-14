@@ -18,7 +18,7 @@ public class Enrollment {
 	private string adviserRemarks;
 	private string approvalStatus;
 	private int courseId;
-	private Date enrollmentDate;
+	private DateTime enrollmentDate;
 	private int enrollmentId;
 	private string grade;
 	private int semesterId;

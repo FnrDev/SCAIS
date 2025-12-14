@@ -15,9 +15,9 @@ using System.IO;
 
 public class User {
 
-	private Date createdAt;
-	private email email;
-	private Date lastLogin;
+	private DateTime createdAt;
+	private string email;
+	private DateTime lastLogin;
 	private string password;
 	private string role;
 	private int userId;

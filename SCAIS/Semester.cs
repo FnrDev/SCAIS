@@ -16,11 +16,11 @@ using System.IO;
 public class Semester {
 
 	private string academicYear;
-	private Date endDate;
+	private DateTime endDate;
 	private bool isActive;
 	private int semesterId;
 	private string semesterName;
-	private Date startDate;
+	private DateTime startDate;
 	public SemesterOffering m_SemesterOffering;
 
 	public Semester(){

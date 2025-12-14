@@ -17,7 +17,7 @@ public class Report {
 
 	private string content;
 	private int generateBy;
-	private Date generateDate;
+	private DateTime generateDate;
 	private int reportId;
 	private string reportType;
 
