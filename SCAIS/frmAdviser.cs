@@ -13,49 +13,27 @@ namespace SCAIS
 {
     public partial class frmAdviser : Form
     {
-        private int userId;
-        private int adviserId;
-        private string adviserEmail;
+        private Adviser adviser;
         private Button currentActiveButton;
 
         public frmAdviser(int userId, string email)
         {
             InitializeComponent();
-            this.userId = userId;
-            this.adviserEmail = email;
-            LoadAdviserId();
-        }
-
-        private void LoadAdviserId()
-        {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
-                string query = "SELECT adviser_id FROM advisers WHERE user_id = @userId";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    dbConn.Open();
-                    object result = cmd.ExecuteScalar();
-                    if (result != null)
-                    {
-                        adviserId = Convert.ToInt32(result);
-                    }
-                    dbConn.Close();
-                }
+                adviser = new Adviser(userId, email);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading adviser data: {ex.Message}", "Error", 
+                MessageBox.Show($"Error initializing adviser: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
             }
         }
 
         private void frmAdviser_Load(object sender, EventArgs e)
         {
-            lblWelcome.Text = $"Welcome, {adviserEmail}";
+            lblWelcome.Text = $"Welcome, {adviser.Email}";
             SetActiveButton(btnMyAdvisees);
             LoadMyAdvisees();
         }
@@ -110,34 +88,16 @@ namespace SCAIS
             
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
+                DataTable dt = adviser.ViewAssignedAdvisees();
+                dgvAdvisees.DataSource = dt;
                 
-                string query = @"SELECT s.student_id, s.student_number, 
-                                s.first_name + ' ' + s.last_name AS student_name,
-                                sp.specialization_name, s.current_semester, s.gpa,
-                                s.completed_credit_hours
-                                FROM students s
-                                LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
-                                WHERE s.adviser_id = @adviserId
-                                ORDER BY s.last_name, s.first_name";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@adviserId", adviserId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    dgvAdvisees.DataSource = dt;
-                    
-                    dgvAdvisees.Columns["student_id"].HeaderText = "ID";
-                    dgvAdvisees.Columns["student_number"].HeaderText = "Student Number";
-                    dgvAdvisees.Columns["student_name"].HeaderText = "Name";
-                    dgvAdvisees.Columns["specialization_name"].HeaderText = "Specialization";
-                    dgvAdvisees.Columns["current_semester"].HeaderText = "Semester";
-                    dgvAdvisees.Columns["gpa"].HeaderText = "GPA";
-                    dgvAdvisees.Columns["completed_credit_hours"].HeaderText = "Credits";
-                }
+                dgvAdvisees.Columns["student_id"].HeaderText = "ID";
+                dgvAdvisees.Columns["student_number"].HeaderText = "Student Number";
+                dgvAdvisees.Columns["student_name"].HeaderText = "Name";
+                dgvAdvisees.Columns["specialization_name"].HeaderText = "Specialization";
+                dgvAdvisees.Columns["current_semester"].HeaderText = "Semester";
+                dgvAdvisees.Columns["gpa"].HeaderText = "GPA";
+                dgvAdvisees.Columns["completed_credit_hours"].HeaderText = "Credits";
             }
             catch (Exception ex)
             {
@@ -212,24 +172,10 @@ namespace SCAIS
         {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
-                
-                string query = @"SELECT student_id, first_name + ' ' + last_name + ' (' + student_number + ')' AS display_name
-                                FROM students WHERE adviser_id = @adviserId
-                                ORDER BY last_name, first_name";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@adviserId", adviserId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    
-                    combo.DisplayMember = "display_name";
-                    combo.ValueMember = "student_id";
-                    combo.DataSource = dt;
-                }
+                DataTable dt = adviser.GetAdviseesForDropdown();
+                combo.DisplayMember = "display_name";
+                combo.ValueMember = "student_id";
+                combo.DataSource = dt;
             }
             catch (Exception ex)
             {
@@ -242,32 +188,15 @@ namespace SCAIS
         {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
+                DataTable dt = adviser.GetAcademicHistory(studentId);
+                dgv.DataSource = dt;
                 
-                string query = @"SELECT c.course_code, c.course_name, c.credit_hours,
-                                e.grade, e.status, sem.semester_name + ' ' + sem.academic_year AS semester
-                                FROM enrollments e
-                                INNER JOIN courses c ON e.course_id = c.course_id
-                                INNER JOIN semesters sem ON e.semester_id = sem.semester_id
-                                WHERE e.student_id = @studentId
-                                ORDER BY sem.start_date DESC";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    dgv.DataSource = dt;
-                    
-                    dgv.Columns["course_code"].HeaderText = "Course Code";
-                    dgv.Columns["course_name"].HeaderText = "Course Name";
-                    dgv.Columns["credit_hours"].HeaderText = "Credits";
-                    dgv.Columns["grade"].HeaderText = "Grade";
-                    dgv.Columns["status"].HeaderText = "Status";
-                    dgv.Columns["semester"].HeaderText = "Semester";
-                }
+                dgv.Columns["course_code"].HeaderText = "Course Code";
+                dgv.Columns["course_name"].HeaderText = "Course Name";
+                dgv.Columns["credit_hours"].HeaderText = "Credits";
+                dgv.Columns["grade"].HeaderText = "Grade";
+                dgv.Columns["status"].HeaderText = "Status";
+                dgv.Columns["semester"].HeaderText = "Semester";
             }
             catch (Exception ex)
             {
@@ -342,43 +271,14 @@ namespace SCAIS
         {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
+                DataTable dt = adviser.RecommendCourses(studentId);
+                dgv.DataSource = dt;
                 
-                string query = @"SELECT c.course_code, c.course_name, c.credit_hours, c.course_type,
-                                CASE WHEN EXISTS (
-                                    SELECT 1 FROM prerequisites p
-                                    WHERE p.course_id = c.course_id
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM enrollments e2
-                                        WHERE e2.student_id = @studentId
-                                        AND e2.course_id = p.prerequisite_course_id
-                                        AND e2.status = 'Completed'
-                                    )
-                                ) THEN 'Prerequisites Not Met' ELSE 'Eligible' END AS eligibility_status
-                                FROM courses c
-                                WHERE c.is_active = 1
-                                AND c.course_id NOT IN (
-                                    SELECT course_id FROM enrollments
-                                    WHERE student_id = @studentId
-                                    AND status IN ('Completed', 'InProgress')
-                                )
-                                ORDER BY c.course_code";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    dgv.DataSource = dt;
-                    
-                    dgv.Columns["course_code"].HeaderText = "Course Code";
-                    dgv.Columns["course_name"].HeaderText = "Course Name";
-                    dgv.Columns["credit_hours"].HeaderText = "Credits";
-                    dgv.Columns["course_type"].HeaderText = "Type";
-                    dgv.Columns["eligibility_status"].HeaderText = "Status";
-                }
+                dgv.Columns["course_code"].HeaderText = "Course Code";
+                dgv.Columns["course_name"].HeaderText = "Course Name";
+                dgv.Columns["credit_hours"].HeaderText = "Credits";
+                dgv.Columns["course_type"].HeaderText = "Type";
+                dgv.Columns["eligibility_status"].HeaderText = "Status";
             }
             catch (Exception ex)
             {
@@ -465,38 +365,17 @@ namespace SCAIS
         {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
+                DataTable dt = adviser.GetPendingApprovals();
+                dgv.DataSource = dt;
                 
-                string query = @"SELECT e.enrollment_id, s.first_name + ' ' + s.last_name AS student_name,
-                                s.student_number, c.course_code, c.course_name, c.credit_hours,
-                                sem.semester_name + ' ' + sem.academic_year AS semester,
-                                e.enrollment_date
-                                FROM enrollments e
-                                INNER JOIN students s ON e.student_id = s.student_id
-                                INNER JOIN courses c ON e.course_id = c.course_id
-                                INNER JOIN semesters sem ON e.semester_id = sem.semester_id
-                                WHERE s.adviser_id = @adviserId
-                                AND e.approval_status = 'PendingApproval'
-                                ORDER BY e.enrollment_date";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@adviserId", adviserId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    dgv.DataSource = dt;
-                    
-                    dgv.Columns["enrollment_id"].HeaderText = "ID";
-                    dgv.Columns["student_name"].HeaderText = "Student";
-                    dgv.Columns["student_number"].HeaderText = "Student #";
-                    dgv.Columns["course_code"].HeaderText = "Course";
-                    dgv.Columns["course_name"].HeaderText = "Course Name";
-                    dgv.Columns["credit_hours"].HeaderText = "Credits";
-                    dgv.Columns["semester"].HeaderText = "Semester";
-                    dgv.Columns["enrollment_date"].HeaderText = "Date";
-                }
+                dgv.Columns["enrollment_id"].HeaderText = "ID";
+                dgv.Columns["student_name"].HeaderText = "Student";
+                dgv.Columns["student_number"].HeaderText = "Student #";
+                dgv.Columns["course_code"].HeaderText = "Course";
+                dgv.Columns["course_name"].HeaderText = "Course Name";
+                dgv.Columns["credit_hours"].HeaderText = "Credits";
+                dgv.Columns["semester"].HeaderText = "Semester";
+                dgv.Columns["enrollment_date"].HeaderText = "Date";
             }
             catch (Exception ex)
             {
@@ -518,25 +397,13 @@ namespace SCAIS
             {
                 int enrollmentId = Convert.ToInt32(dgv.SelectedRows[0].Cells["enrollment_id"].Value);
                 
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
-                
-                string query = @"UPDATE enrollments 
-                                SET approval_status = @status, 
-                                    adviser_id = @adviserId,
-                                    approval_date = @approvalDate
-                                WHERE enrollment_id = @enrollmentId";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                if (status == "Approved")
                 {
-                    cmd.Parameters.AddWithValue("@status", status);
-                    cmd.Parameters.AddWithValue("@adviserId", adviserId);
-                    cmd.Parameters.AddWithValue("@approvalDate", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@enrollmentId", enrollmentId);
-                    
-                    dbConn.Open();
-                    cmd.ExecuteNonQuery();
-                    dbConn.Close();
+                    adviser.ApproveCoursePlan(enrollmentId);
+                }
+                else if (status == "Rejected")
+                {
+                    adviser.RejectCoursePlan(enrollmentId);
                 }
                 
                 MessageBox.Show($"Enrollment {status.ToLower()} successfully.", "Success", 
@@ -655,110 +522,13 @@ namespace SCAIS
         {
             try
             {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
-                
-                StringBuilder report = new StringBuilder();
-                report.AppendLine("=".PadRight(60, '='));
-                report.AppendLine($"  {reportType.ToUpper()}");
-                report.AppendLine("=".PadRight(60, '='));
-                report.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}");
-                report.AppendLine();
-                
-                string studentQuery = @"SELECT s.first_name + ' ' + s.last_name AS name, 
-                                       s.student_number, sp.specialization_name, 
-                                       s.current_semester, s.gpa, s.completed_credit_hours
-                                       FROM students s
-                                       LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
-                                       WHERE s.student_id = @studentId";
-                
-                using (SqlCommand cmd = new SqlCommand(studentQuery, conn))
-                {
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    dbConn.Open();
-                    
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            report.AppendLine($"Student: {reader["name"]}");
-                            report.AppendLine($"Student Number: {reader["student_number"]}");
-                            report.AppendLine($"Specialization: {reader["specialization_name"]}");
-                            report.AppendLine($"Current Semester: {reader["current_semester"]}");
-                            report.AppendLine($"GPA: {reader["gpa"]}");
-                            report.AppendLine($"Completed Credits: {reader["completed_credit_hours"]}");
-                        }
-                    }
-                    
-                    dbConn.Close();
-                }
-                
-                report.AppendLine();
-                report.AppendLine("-".PadRight(60, '-'));
-                report.AppendLine("COURSE HISTORY");
-                report.AppendLine("-".PadRight(60, '-'));
-                
-                string coursesQuery = @"SELECT c.course_code, c.course_name, e.grade, e.status
-                                       FROM enrollments e
-                                       INNER JOIN courses c ON e.course_id = c.course_id
-                                       WHERE e.student_id = @studentId
-                                       ORDER BY e.enrollment_date";
-                
-                using (SqlCommand cmd = new SqlCommand(coursesQuery, conn))
-                {
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        report.AppendLine($"{row["course_code"],-10} {row["course_name"],-30} {row["grade"],-5} {row["status"]}");
-                    }
-                }
-                
-                report.AppendLine();
-                report.AppendLine("=".PadRight(60, '='));
-                report.AppendLine("End of Report");
-                report.AppendLine("=".PadRight(60, '='));
-                
-                output.Text = report.ToString();
-                
-                SaveReportToDatabase(studentId, reportType, report.ToString());
+                string reportContent = adviser.GenerateReportContent(studentId, reportType);
+                output.Text = reportContent;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error generating report: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void SaveReportToDatabase(int studentId, string reportType, string content)
-        {
-            try
-            {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                SqlConnection conn = dbConn.GetConnection();
-                
-                string query = @"INSERT INTO reports (generated_by, student_id, report_type, content, generated_date)
-                                VALUES (@adviserId, @studentId, @reportType, @content, @generatedDate)";
-                
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@adviserId", adviserId);
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    cmd.Parameters.AddWithValue("@reportType", reportType.Replace(" ", ""));
-                    cmd.Parameters.AddWithValue("@content", content);
-                    cmd.Parameters.AddWithValue("@generatedDate", DateTime.Now);
-                    
-                    dbConn.Open();
-                    cmd.ExecuteNonQuery();
-                    dbConn.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving report: {ex.Message}");
             }
         }
 

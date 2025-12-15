@@ -8,75 +8,445 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Text;
-using System.IO;
+using SCAIS;
 
-
-
-public class Adviser : User {
-
+public class Adviser : User
+{
 	private int adviserId;
+	private int userId;
 	private string department;
 	private string facultyId;
 	private string officeLocation;
+	private string email;
 	public Report m_Report;
 
-	public Adviser(){
-
+	public Adviser()
+	{
 	}
 
-	~Adviser(){
-
+	public Adviser(int userId, string email)
+	{
+		this.userId = userId;
+		this.email = email;
+		LoadAdviserData();
 	}
 
-	/// 
-	/// <param name="studentId"></param>
-	public AcademicRecord AccessAcademicHistory(int studentId){
+	~Adviser()
+	{
+	}
 
+	public int AdviserId
+	{
+		get { return adviserId; }
+	}
+
+	public int UserId
+	{
+		get { return userId; }
+	}
+
+	public string Email
+	{
+		get { return email; }
+	}
+
+	public string Department
+	{
+		get { return department; }
+	}
+
+	public string FacultyId
+	{
+		get { return facultyId; }
+	}
+
+	public string OfficeLocation
+	{
+		get { return officeLocation; }
+	}
+
+	private void LoadAdviserData()
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+			string query = @"SELECT adviser_id, faculty_id, department, office_location 
+                            FROM advisers WHERE user_id = @userId";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@userId", userId);
+				dbConn.Open();
+
+				using (SqlDataReader reader = cmd.ExecuteReader())
+				{
+					if (reader.Read())
+					{
+						adviserId = reader.GetInt32(reader.GetOrdinal("adviser_id"));
+						facultyId = reader.IsDBNull(reader.GetOrdinal("faculty_id")) ? "" : reader.GetString(reader.GetOrdinal("faculty_id"));
+						department = reader.IsDBNull(reader.GetOrdinal("department")) ? "" : reader.GetString(reader.GetOrdinal("department"));
+						officeLocation = reader.IsDBNull(reader.GetOrdinal("office_location")) ? "" : reader.GetString(reader.GetOrdinal("office_location"));
+					}
+				}
+
+				dbConn.Close();
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading adviser data: {ex.Message}");
+		}
+	}
+
+	public DataTable ViewAssignedAdvisees()
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"SELECT s.student_id, s.student_number, 
+                            s.first_name + ' ' + s.last_name AS student_name,
+                            sp.specialization_name, s.current_semester, s.gpa,
+                            s.completed_credit_hours
+                            FROM students s
+                            LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+                            WHERE s.adviser_id = @adviserId
+                            ORDER BY s.last_name, s.first_name";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@adviserId", adviserId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading advisees: {ex.Message}");
+		}
+	}
+
+	public AcademicRecord AccessAcademicHistory(int studentId)
+	{
 		return null;
 	}
 
-	/// 
-	/// <param name="enrollmentId"></param>
-	public void ApproveCoursePlan(int enrollmentId){
+	public DataTable GetAcademicHistory(int studentId)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
 
+			string query = @"SELECT c.course_code, c.course_name, c.credit_hours,
+                            e.grade, e.status, sem.semester_name + ' ' + sem.academic_year AS semester
+                            FROM enrollments e
+                            INNER JOIN courses c ON e.course_id = c.course_id
+                            INNER JOIN semesters sem ON e.semester_id = sem.semester_id
+                            WHERE e.student_id = @studentId
+                            ORDER BY sem.start_date DESC";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading academic history: {ex.Message}");
+		}
 	}
 
-	/// 
-	/// <param name="studentId"></param>
-	public Report GenerateProgressReport(int studentId){
+	public DataTable GetAdviseesForDropdown()
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
 
+			string query = @"SELECT student_id, first_name + ' ' + last_name + ' (' + student_number + ')' AS display_name
+                            FROM students WHERE adviser_id = @adviserId
+                            ORDER BY last_name, first_name";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@adviserId", adviserId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading students: {ex.Message}");
+		}
+	}
+
+	public DataTable RecommendCourses(int studentId)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"SELECT c.course_code, c.course_name, c.credit_hours, c.course_type,
+                            CASE WHEN EXISTS (
+                                SELECT 1 FROM prerequisites p
+                                WHERE p.course_id = c.course_id
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM enrollments e2
+                                    WHERE e2.student_id = @studentId
+                                    AND e2.course_id = p.prerequisite_course_id
+                                    AND e2.status = 'Completed'
+                                )
+                            ) THEN 'Prerequisites Not Met' ELSE 'Eligible' END AS eligibility_status
+                            FROM courses c
+                            WHERE c.is_active = 1
+                            AND c.course_id NOT IN (
+                                SELECT course_id FROM enrollments
+                                WHERE student_id = @studentId
+                                AND status IN ('Completed', 'InProgress')
+                            )
+                            ORDER BY c.course_code";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading course recommendations: {ex.Message}");
+		}
+	}
+
+	public DataTable GetPendingApprovals()
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"SELECT e.enrollment_id, s.first_name + ' ' + s.last_name AS student_name,
+                            s.student_number, c.course_code, c.course_name, c.credit_hours,
+                            sem.semester_name + ' ' + sem.academic_year AS semester,
+                            e.enrollment_date
+                            FROM enrollments e
+                            INNER JOIN students s ON e.student_id = s.student_id
+                            INNER JOIN courses c ON e.course_id = c.course_id
+                            INNER JOIN semesters sem ON e.semester_id = sem.semester_id
+                            WHERE s.adviser_id = @adviserId
+                            AND e.approval_status = 'PendingApproval'
+                            ORDER BY e.enrollment_date";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@adviserId", adviserId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading pending approvals: {ex.Message}");
+		}
+	}
+
+	public void ApproveCoursePlan(int enrollmentId)
+	{
+		ProcessEnrollmentApproval(enrollmentId, "Approved");
+	}
+
+	public void RejectCoursePlan(int enrollmentId)
+	{
+		ProcessEnrollmentApproval(enrollmentId, "Rejected");
+	}
+
+	private void ProcessEnrollmentApproval(int enrollmentId, string status)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"UPDATE enrollments 
+                            SET approval_status = @status, 
+                                adviser_id = @adviserId,
+                                approval_date = @approvalDate
+                            WHERE enrollment_id = @enrollmentId";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@status", status);
+				cmd.Parameters.AddWithValue("@adviserId", adviserId);
+				cmd.Parameters.AddWithValue("@approvalDate", DateTime.Now);
+				cmd.Parameters.AddWithValue("@enrollmentId", enrollmentId);
+
+				dbConn.Open();
+				int rowsAffected = cmd.ExecuteNonQuery();
+				dbConn.Close();
+
+				if (rowsAffected == 0)
+				{
+					throw new Exception("No enrollment found to update.");
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error processing approval: {ex.Message}");
+		}
+	}
+
+	public void ModifyCoursePlan(int enrollmentId)
+	{
+	}
+
+	public Report GenerateProgressReport(int studentId)
+	{
 		return null;
 	}
 
-	public bool Login(){
+	public string GenerateReportContent(int studentId, string reportType)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
 
+			StringBuilder report = new StringBuilder();
+			report.AppendLine("=".PadRight(60, '='));
+			report.AppendLine($"  {reportType.ToUpper()}");
+			report.AppendLine("=".PadRight(60, '='));
+			report.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}");
+			report.AppendLine();
+
+			string studentQuery = @"SELECT s.first_name + ' ' + s.last_name AS name, 
+                                   s.student_number, sp.specialization_name, 
+                                   s.current_semester, s.gpa, s.completed_credit_hours
+                                   FROM students s
+                                   LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+                                   WHERE s.student_id = @studentId";
+
+			using (SqlCommand cmd = new SqlCommand(studentQuery, conn))
+			{
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				dbConn.Open();
+
+				using (SqlDataReader reader = cmd.ExecuteReader())
+				{
+					if (reader.Read())
+					{
+						report.AppendLine($"Student: {reader["name"]}");
+						report.AppendLine($"Student Number: {reader["student_number"]}");
+						report.AppendLine($"Specialization: {reader["specialization_name"]}");
+						report.AppendLine($"Current Semester: {reader["current_semester"]}");
+						report.AppendLine($"GPA: {reader["gpa"]}");
+						report.AppendLine($"Completed Credits: {reader["completed_credit_hours"]}");
+					}
+				}
+
+				dbConn.Close();
+			}
+
+			report.AppendLine();
+			report.AppendLine("-".PadRight(60, '-'));
+			report.AppendLine("COURSE HISTORY");
+			report.AppendLine("-".PadRight(60, '-'));
+
+			string coursesQuery = @"SELECT c.course_code, c.course_name, e.grade, e.status
+                                   FROM enrollments e
+                                   INNER JOIN courses c ON e.course_id = c.course_id
+                                   WHERE e.student_id = @studentId
+                                   ORDER BY e.enrollment_date";
+
+			using (SqlCommand cmd = new SqlCommand(coursesQuery, conn))
+			{
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+
+				foreach (DataRow row in dt.Rows)
+				{
+					report.AppendLine($"{row["course_code"],-10} {row["course_name"],-30} {row["grade"],-5} {row["status"]}");
+				}
+			}
+
+			report.AppendLine();
+			report.AppendLine("=".PadRight(60, '='));
+			report.AppendLine("End of Report");
+			report.AppendLine("=".PadRight(60, '='));
+
+			string reportContent = report.ToString();
+			SaveReportToDatabase(studentId, reportType, reportContent);
+
+			return reportContent;
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error generating report: {ex.Message}");
+		}
+	}
+
+	private void SaveReportToDatabase(int studentId, string reportType, string content)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"INSERT INTO reports (generated_by, student_id, report_type, content, generated_date)
+                            VALUES (@adviserId, @studentId, @reportType, @content, @generatedDate)";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@adviserId", adviserId);
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				cmd.Parameters.AddWithValue("@reportType", reportType.Replace(" ", ""));
+				cmd.Parameters.AddWithValue("@content", content);
+				cmd.Parameters.AddWithValue("@generatedDate", DateTime.Now);
+
+				dbConn.Open();
+				cmd.ExecuteNonQuery();
+				dbConn.Close();
+			}
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"Error saving report: {ex.Message}");
+		}
+	}
+
+	public bool Login()
+	{
 		return false;
 	}
 
-	public void Logout(){
-
+	public void Logout()
+	{
 	}
 
-	/// 
-	/// <param name="enrollmentId"></param>
-	public void ModifyCoursePlan(int enrollmentId){
-
-	}
-
-	/// 
-	/// <param name="studentId"></param>
-	public void RecommebdCourses(int studentId){
-
-	}
-
-	public void UpdateProfile(){
-
-	}
-
-	public List<Student> ViewAssignedAdvisees(){
-
-		return null;
+	public void UpdateProfile()
+	{
 	}
 
 }//end Adviser
