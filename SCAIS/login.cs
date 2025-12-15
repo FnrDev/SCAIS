@@ -11,9 +11,9 @@ using System.Data.SqlClient;
 
 namespace SCAIS
 {
-    public partial class Form1 : Form
+    public partial class login : Form
     {
-        public Form1()
+        public login()
         {
             InitializeComponent();
         }
@@ -122,14 +122,22 @@ namespace SCAIS
                 
                 using (SqlCommand updateCmd = new SqlCommand(updateQuery, conn))
                 {
-                    updateCmd.Parameters.AddWithValue("@lastLogin", DateTime.Now);
-                    updateCmd.Parameters.AddWithValue("@userId", userId);
-                    updateCmd.ExecuteNonQuery();
+                    updateCmd.Parameters.Add("@lastLogin", SqlDbType.DateTime).Value = DateTime.Now;
+                    updateCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
+                    
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
+                    
+                    if (rowsAffected == 0)
+                    {
+                        MessageBox.Show($"Warning: Failed to update last login for user_id: {userId}", 
+                            "Update Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to update last login: {ex.Message}");
+                MessageBox.Show($"Failed to update last login: {ex.Message}\n\nDetails: {ex.StackTrace}", 
+                    "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -166,6 +174,27 @@ namespace SCAIS
                 txtEmail.Focus();
                 this.Show();
             }
+        }
+
+        private void btnLoginStudent_Click(object sender, EventArgs e)
+        {
+            txtEmail.Text = "student@polytechnic.bh";
+            txtPassword.Text = "student123";
+            txtEmail.Focus();
+        }
+
+        private void btnLoginAdviser_Click(object sender, EventArgs e)
+        {
+            txtEmail.Text = "adviser@polytechnic.bh";
+            txtPassword.Text = "adviser123";
+            txtEmail.Focus();
+        }
+
+        private void btnLoginAdmin_Click(object sender, EventArgs e)
+        {
+            txtEmail.Text = "admin@polytechnic.bh";
+            txtPassword.Text = "admin123";
+            txtEmail.Focus();
         }
     }
 }

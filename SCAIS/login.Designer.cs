@@ -1,6 +1,6 @@
 ﻿namespace SCAIS
 {
-    partial class Form1
+    partial class login
     {
         /// <summary>
         /// Required designer variable.
@@ -37,8 +37,14 @@
             this.lblPassword = new System.Windows.Forms.Label();
             this.lblEmail = new System.Windows.Forms.Label();
             this.lblLoginTitle = new System.Windows.Forms.Label();
+            this.panelQuickLogin = new System.Windows.Forms.Panel();
+            this.lblQuickLogin = new System.Windows.Forms.Label();
+            this.btnLoginStudent = new System.Windows.Forms.Button();
+            this.btnLoginAdviser = new System.Windows.Forms.Button();
+            this.btnLoginAdmin = new System.Windows.Forms.Button();
             this.panelHeader.SuspendLayout();
             this.panelLogin.SuspendLayout();
+            this.panelQuickLogin.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelHeader
@@ -143,22 +149,91 @@
             this.lblLoginTitle.Text = "Login";
             this.lblLoginTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // Form1
+            // panelQuickLogin
+            // 
+            this.panelQuickLogin.BackColor = System.Drawing.Color.White;
+            this.panelQuickLogin.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelQuickLogin.Controls.Add(this.btnLoginAdmin);
+            this.panelQuickLogin.Controls.Add(this.btnLoginAdviser);
+            this.panelQuickLogin.Controls.Add(this.btnLoginStudent);
+            this.panelQuickLogin.Controls.Add(this.lblQuickLogin);
+            this.panelQuickLogin.Location = new System.Drawing.Point(570, 150);
+            this.panelQuickLogin.Name = "panelQuickLogin";
+            this.panelQuickLogin.Size = new System.Drawing.Size(180, 250);
+            this.panelQuickLogin.TabIndex = 2;
+            // 
+            // lblQuickLogin
+            // 
+            this.lblQuickLogin.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblQuickLogin.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblQuickLogin.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
+            this.lblQuickLogin.Location = new System.Drawing.Point(0, 0);
+            this.lblQuickLogin.Name = "lblQuickLogin";
+            this.lblQuickLogin.Size = new System.Drawing.Size(178, 40);
+            this.lblQuickLogin.TabIndex = 0;
+            this.lblQuickLogin.Text = "Quick Login";
+            this.lblQuickLogin.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // btnLoginStudent
+            // 
+            this.btnLoginStudent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(41)))), ((int)(((byte)(128)))), ((int)(((byte)(185)))));
+            this.btnLoginStudent.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLoginStudent.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnLoginStudent.ForeColor = System.Drawing.Color.White;
+            this.btnLoginStudent.Location = new System.Drawing.Point(20, 50);
+            this.btnLoginStudent.Name = "btnLoginStudent";
+            this.btnLoginStudent.Size = new System.Drawing.Size(140, 50);
+            this.btnLoginStudent.TabIndex = 1;
+            this.btnLoginStudent.Text = "Login as\r\nStudent";
+            this.btnLoginStudent.UseVisualStyleBackColor = false;
+            this.btnLoginStudent.Click += new System.EventHandler(this.btnLoginStudent_Click);
+            // 
+            // btnLoginAdviser
+            // 
+            this.btnLoginAdviser.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
+            this.btnLoginAdviser.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLoginAdviser.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnLoginAdviser.ForeColor = System.Drawing.Color.White;
+            this.btnLoginAdviser.Location = new System.Drawing.Point(20, 115);
+            this.btnLoginAdviser.Name = "btnLoginAdviser";
+            this.btnLoginAdviser.Size = new System.Drawing.Size(140, 50);
+            this.btnLoginAdviser.TabIndex = 2;
+            this.btnLoginAdviser.Text = "Login as\r\nAdviser";
+            this.btnLoginAdviser.UseVisualStyleBackColor = false;
+            this.btnLoginAdviser.Click += new System.EventHandler(this.btnLoginAdviser_Click);
+            // 
+            // btnLoginAdmin
+            // 
+            this.btnLoginAdmin.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(89)))), ((int)(((byte)(182)))));
+            this.btnLoginAdmin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLoginAdmin.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnLoginAdmin.ForeColor = System.Drawing.Color.White;
+            this.btnLoginAdmin.Location = new System.Drawing.Point(20, 180);
+            this.btnLoginAdmin.Name = "btnLoginAdmin";
+            this.btnLoginAdmin.Size = new System.Drawing.Size(140, 50);
+            this.btnLoginAdmin.TabIndex = 3;
+            this.btnLoginAdmin.Text = "Login as\r\nAdmin";
+            this.btnLoginAdmin.UseVisualStyleBackColor = false;
+            this.btnLoginAdmin.Click += new System.EventHandler(this.btnLoginAdmin_Click);
+            // 
+            // login
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(236)))), ((int)(((byte)(240)))), ((int)(((byte)(241)))));
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.panelQuickLogin);
             this.Controls.Add(this.panelLogin);
             this.Controls.Add(this.panelHeader);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "login";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Smart Course Advising Information System - Login";
             this.panelHeader.ResumeLayout(false);
             this.panelLogin.ResumeLayout(false);
             this.panelLogin.PerformLayout();
+            this.panelQuickLogin.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -174,6 +249,11 @@
         private System.Windows.Forms.Label lblPassword;
         private System.Windows.Forms.Label lblEmail;
         private System.Windows.Forms.Label lblLoginTitle;
+        private System.Windows.Forms.Panel panelQuickLogin;
+        private System.Windows.Forms.Label lblQuickLogin;
+        private System.Windows.Forms.Button btnLoginStudent;
+        private System.Windows.Forms.Button btnLoginAdviser;
+        private System.Windows.Forms.Button btnLoginAdmin;
     }
 }
 

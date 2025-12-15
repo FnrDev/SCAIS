@@ -34,8 +34,6 @@ namespace SCAIS
             
             if (result == DialogResult.Yes)
             {
-                Form1 loginForm = new Form1();
-                loginForm.Show();
                 this.Close();
             }
         }
