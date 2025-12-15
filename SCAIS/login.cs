@@ -48,6 +48,10 @@ namespace SCAIS
 
                 string query = "SELECT user_id, email, password, role, is_active FROM users WHERE email = @email";
                 
+                int userId = 0;
+                string role = "";
+                bool loginSuccessful = false;
+                
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@email", email);
@@ -64,6 +68,7 @@ namespace SCAIS
                             {
                                 MessageBox.Show("Your account is inactive. Please contact the administrator.", 
                                     "Account Inactive", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                reader.Close();
                                 dbConn.Close();
                                 return;
                             }
@@ -72,16 +77,9 @@ namespace SCAIS
                             
                             if (VerifyPassword(password, storedPassword))
                             {
-                                int userId = reader.GetInt32(reader.GetOrdinal("user_id"));
-                                string role = reader.GetString(reader.GetOrdinal("role"));
-                                
-                                reader.Close();
-                                
-                                UpdateLastLogin(userId, conn);
-                                
-                                dbConn.Close();
-                                
-                                RedirectToRoleBasedForm(userId, email, role);
+                                userId = reader.GetInt32(reader.GetOrdinal("user_id"));
+                                role = reader.GetString(reader.GetOrdinal("role"));
+                                loginSuccessful = true;
                             }
                             else
                             {
@@ -99,6 +97,17 @@ namespace SCAIS
                             txtPassword.Focus();
                         }
                     }
+                }
+                
+                if (loginSuccessful)
+                {
+                    UpdateLastLogin(userId, conn);
+                    dbConn.Close();
+                    RedirectToRoleBasedForm(userId, email, role);
+                }
+                else
+                {
+                    dbConn.Close();
                 }
             }
             catch (Exception ex)
@@ -122,22 +131,18 @@ namespace SCAIS
                 
                 using (SqlCommand updateCmd = new SqlCommand(updateQuery, conn))
                 {
-                    updateCmd.Parameters.Add("@lastLogin", SqlDbType.DateTime).Value = DateTime.Now;
-                    updateCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
+                    updateCmd.Parameters.AddWithValue("@lastLogin", DateTime.Now);
+                    updateCmd.Parameters.AddWithValue("@userId", userId);
                     
                     int rowsAffected = updateCmd.ExecuteNonQuery();
                     
-                    if (rowsAffected == 0)
-                    {
-                        MessageBox.Show($"Warning: Failed to update last login for user_id: {userId}", 
-                            "Update Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
+                    System.Diagnostics.Debug.WriteLine($"UpdateLastLogin: {rowsAffected} row(s) affected for user_id {userId}");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to update last login: {ex.Message}\n\nDetails: {ex.StackTrace}", 
-                    "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Diagnostics.Debug.WriteLine($"Failed to update last login: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
 
