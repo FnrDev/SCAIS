@@ -436,15 +436,6 @@ public class Adviser : User
 		}
 	}
 
-	public bool Login()
-	{
-		return false;
-	}
-
-	public void Logout()
-	{
-	}
-
 	public void UpdateProfile()
 	{
 	}
