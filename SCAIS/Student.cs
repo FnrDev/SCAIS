@@ -8,66 +8,258 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Text;
-using System.IO;
 
+public class Student : User
+{
 
+    private int currentSemester;
+    private int enrollmentYear;
+    private int gpa;
+    private int specializationId;
+    private int studentId;
+    private string studentNumber;
+    public Adviser m_Adviser;
+    public AcademicRecord m_AcademicRecord;
+    public Specialization m_Specialization;
 
-public class Student : User {
+    public Student()
+    {
+    }
 
-	private int currentSemester;
-	private int enrollmentYear;
-	private int gpa;
-	private int specializationId;
-	private int studentId;
-	private string studentNumber;
-	public Adviser m_Adviser;
-	public AcademicRecord m_AcademicRecord;
-	public Specialization m_Specialization;
+    ~Student()
+    {
+    }
 
-	public Student(){
+    public bool Login()
+    {
+        return false;
+    }
 
-	}
+    public void Logout()
+    {
+    }
 
-	~Student(){
+    public void SubmitCoursePreferences()
+    {
+    }
 
-	}
+    public void UpdateProfile()
+    {
+    }
 
-	public bool Login(){
+    public AcademicRecord ViewAcademicRecord()
+    {
+        return null;
+    }
 
-		return false;
-	}
+    public List<string> ViewAdviserRemarks()
+    {
+        return null;
+    }
 
-	public void Logout(){
+    public List<Enrollment> ViewApprovedCourses()
+    {
+        return null;
+    }
 
-	}
+    public List<Course> ViewEligibleCourses()
+    {
+        return null;
+    }
 
-	public void SubmitCoursePreferences(){
+    //  return course history for student 
+    public DataTable GetAcademicHistory(int studentId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
 
-	}
+            string query = @"SELECT c.course_code, c.course_name, c.credit_hours,
+                            e.grade, e.status, sem.semester_name + ' ' + sem.academic_year AS semester
+                            FROM enrollments e
+                            INNER JOIN courses c ON e.course_id = c.course_id
+                            INNER JOIN semesters sem ON e.semester_id = sem.semester_id
+                            WHERE e.student_id = @studentId
+                            ORDER BY sem.start_date DESC";
 
-	public void UpdateProfile(){
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading academic history: {ex.Message}");
+        }
+    }
 
-	}
+    // return eligible courses 
+    public DataTable GetEligibleCourses(int studentId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
 
-	public AcademicRecord ViewAcademicRecord(){
+            string query = @"SELECT c.course_id, c.course_code, c.course_name, c.credit_hours, c.course_type,
+                            CASE WHEN EXISTS (
+                                SELECT 1 FROM prerequisites p
+                                WHERE p.course_id = c.course_id
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM enrollments e2
+                                    WHERE e2.student_id = @studentId
+                                    AND e2.course_id = p.prerequisite_course_id
+                                    AND e2.status = 'Completed'
+                                )
+                            ) THEN 'Prerequisites Not Met' ELSE 'Eligible' END AS eligibility_status
+                            FROM courses c
+                            WHERE c.is_active = 1
+                            AND c.course_id NOT IN (
+                                SELECT course_id FROM enrollments
+                                WHERE student_id = @studentId
+                                AND status IN ('Completed', 'InProgress')
+                            )
+                            ORDER BY c.course_code";
 
-		return null;
-	}
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading eligible courses: {ex.Message}");
+        }
+    }
 
-	public List<string> ViewAdviserRemarks(){
+    // submit course preferences (inserts into enrollments with approval_status = 'PendingApproval')
+    // Returns tuple: (insertedCount, skippedCount)
+    public (int inserted, int skipped) SubmitCoursePreferences(int studentId, List<int> courseIds)
+    {
+        int inserted = 0;
+        int skipped = 0;
 
-		return null;
-	}
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
 
-	public List<Enrollment> ViewApprovedCourses(){
+            int semesterId = GetActiveSemesterId();
+            if (semesterId == 0)
+                throw new Exception("No active semester found.");
 
-		return null;
-	}
+            string insertQuery = @"INSERT INTO enrollments (student_id, course_id, semester_id, status, approval_status, enrollment_date)
+                                   VALUES (@studentId, @courseId, @semesterId, 'Pending', 'PendingApproval', GETDATE())";
 
-	public List<Course> ViewEligibleCourses(){
+            using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+            {
+                cmd.Parameters.Add("@studentId", SqlDbType.Int);
+                cmd.Parameters.Add("@courseId", SqlDbType.Int);
+                cmd.Parameters.Add("@semesterId", SqlDbType.Int);
 
-		return null;
-	}
+                dbConn.Open();
 
+                foreach (int courseId in courseIds)
+                {
+                    try
+                    {
+                        cmd.Parameters["@studentId"].Value = studentId;
+                        cmd.Parameters["@courseId"].Value = courseId;
+                        cmd.Parameters["@semesterId"].Value = semesterId;
+
+                        cmd.ExecuteNonQuery();
+                        inserted++;
+                    }
+                    catch (SqlException sqlEx)
+                    {
+                        // unique_enrollment or other DB constraint -> skip and count
+                        skipped++;
+                        System.Diagnostics.Debug.WriteLine($"SubmitCoursePreferences - skipped course {courseId}: {sqlEx.Message}");
+                    }
+                }
+
+                dbConn.Close();
+            }
+
+            return (inserted, skipped);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error submitting course preferences: {ex.Message}");
+        }
+    }
+
+    // get approved/rejected enrollments and adviser remarks
+    public DataTable GetApprovedCoursesAndRemarks(int studentId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT e.enrollment_id, c.course_code, c.course_name, c.credit_hours,
+                            sem.semester_name + ' ' + sem.academic_year AS semester,
+                            e.approval_status, e.adviser_remarks, a.faculty_id AS adviser_faculty_id
+                            FROM enrollments e
+                            INNER JOIN courses c ON e.course_id = c.course_id
+                            INNER JOIN semesters sem ON e.semester_id = sem.semester_id
+                            LEFT JOIN advisers a ON e.adviser_id = a.adviser_id
+                            WHERE e.student_id = @studentId
+                            AND e.approval_status IN ('Approved', 'Rejected')
+                            ORDER BY e.approval_date DESC";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading approved courses: {ex.Message}");
+        }
+    }
+
+    // Helper: get active semester id
+    private int GetActiveSemesterId()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT TOP 1 semester_id FROM semesters WHERE is_active = 1";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                dbConn.Open();
+                object result = cmd.ExecuteScalar();
+                dbConn.Close();
+
+                if (result != null && int.TryParse(result.ToString(), out int semId))
+                    return semId;
+
+                return 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error fetching active semester: {ex.Message}");
+        }
+    }
 }//end Student
