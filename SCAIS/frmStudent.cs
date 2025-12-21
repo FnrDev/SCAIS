@@ -1,4 +1,3 @@
-csharp SCAIS\frmStudent.cs
 using System;
 using System.Collections.Generic;
 using System.Data;
