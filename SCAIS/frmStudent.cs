@@ -14,8 +14,7 @@ namespace SCAIS
         private Student studentModel;
         private Button currentActiveButton;
         private Panel panelSidebar;
-        private Panel panelMain;
-        private Panel panelContent;
+        private Panel panelContent; 
 
         public frmStudent(int studentId, string email)
         {
@@ -29,40 +28,31 @@ namespace SCAIS
         {
             lblWelcome.Text = $"Welcome, {studentEmail}";
             BuildLayout();
-            SetActiveButton(CreateSidebarButton(">  Academic Record", 20, AcademicRecord_Click));
+            var btn = CreateSidebarButton(">  Academic Record", 20, AcademicRecord_Click);
+            panelSidebar.Controls.Add(btn);
+            SetActiveButton(btn);
             LoadAcademicRecord();
         }
 
         private void BuildLayout()
         {
-            // Create sidebar (if not already in designer)
             if (panelSidebar == null)
             {
                 panelSidebar = new Panel
                 {
                     BackColor = Color.FromArgb(44, 62, 80),
-                    Size = new Size(250, this.ClientSize.Height - 100),
-                    Location = new Point(0, 100),
+                    Width = 250,
+                    Dock = DockStyle.Left,
                     Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left
                 };
+
                 this.Controls.Add(panelSidebar);
             }
 
-            // Create main panel container
-            if (panelMain == null)
-            {
-                panelMain = new Panel
-                {
-                    BackColor = Color.FromArgb(236, 240, 241),
-                    Location = new Point(250, 100),
-                    Size = new Size(this.ClientSize.Width - 250, this.ClientSize.Height - 100),
-                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                    Padding = new Padding(20)
-                };
-                this.Controls.Add(panelMain);
-            }
+            // Ensure Designer panelMain uses padding for content
+            this.panelMain.Padding = new Padding(20);
 
-            // Create content panel inside main
+            // Create content panel inside designer panelMain
             if (panelContent == null)
             {
                 panelContent = new Panel
@@ -72,14 +62,14 @@ namespace SCAIS
                     Padding = new Padding(30),
                     AutoScroll = true
                 };
-                panelMain.Controls.Add(panelContent);
+
+                // Remove placeholder controls inside panelMain and add panelContent
+                this.panelMain.Controls.Clear();
+                this.panelMain.Controls.Add(panelContent);
             }
 
-            // Sidebar buttons
-            // Clear existing sidebar children to avoid duplicates on resize
             panelSidebar.Controls.Clear();
 
-            // Buttons
             Button btnAcademicRecord = CreateSidebarButton(">  Academic Record", 20, AcademicRecord_Click);
             Button btnEligibleCourses = CreateSidebarButton(">  Eligible Courses", 80, EligibleCourses_Click);
             Button btnSubmitPreferences = CreateSidebarButton(">  Submit Preferences", 140, SubmitPreferences_Click);
@@ -148,7 +138,6 @@ namespace SCAIS
             };
             panelContent.Controls.Add(lblTitle);
 
-            // Summary area (GPA, Credits)
             Label lblSummary = new Label
             {
                 Text = "Summary",
@@ -158,11 +147,8 @@ namespace SCAIS
             };
             panelContent.Controls.Add(lblSummary);
 
-            // Attempt to load student summary
             try
             {
-                // Load basic student summary 
-                var db = new Student();
                 DataTable summaryTable = GetStudentSummary(studentId);
                 int top = 100;
 
@@ -183,7 +169,6 @@ namespace SCAIS
                     panelContent.Controls.Add(lblCredits);
                 }
 
-                // Course history grid
                 DataGridView dgvHistory = new DataGridView
                 {
                     Location = new Point(30, 180),
@@ -215,7 +200,6 @@ namespace SCAIS
             }
         }
 
-        // Helper to get student summary (Name, number, specialization, gpa, credits)
         private DataTable GetStudentSummary(int studentId)
         {
             try
@@ -244,7 +228,7 @@ namespace SCAIS
             }
         }
 
-        // Page: Eligible Courses
+        // Eligible Courses
         private void EligibleCourses_Click(object sender, EventArgs e)
         {
             SetActiveButton((Button)sender);
@@ -289,7 +273,6 @@ namespace SCAIS
                     dgv.Columns["credit_hours"].HeaderText = "Credits";
                     dgv.Columns["course_type"].HeaderText = "Type";
                     dgv.Columns["eligibility_status"].HeaderText = "Status";
-                    // course_id hidden for actions
                     if (dgv.Columns.Contains("course_id"))
                         dgv.Columns["course_id"].Visible = false;
                 }
@@ -300,7 +283,7 @@ namespace SCAIS
             }
         }
 
-        // Page: Submit Preferences
+        // Submit Preferences
         private void SubmitPreferences_Click(object sender, EventArgs e)
         {
             SetActiveButton((Button)sender);
@@ -352,7 +335,6 @@ namespace SCAIS
                 DataTable dt = studentModel.GetEligibleCourses(studentId);
                 dgv.DataSource = dt;
 
-                // add checkbox column
                 DataGridViewCheckBoxColumn chk = new DataGridViewCheckBoxColumn
                 {
                     HeaderText = "Select",
@@ -407,7 +389,7 @@ namespace SCAIS
             }
         }
 
-        // Page: Approved Courses + Adviser Remarks
+        // Approved Courses + Remarks
         private void ApprovedCourses_Click(object sender, EventArgs e)
         {
             SetActiveButton((Button)sender);
@@ -455,7 +437,6 @@ namespace SCAIS
                     dgv.Columns["adviser_remarks"].HeaderText = "Adviser Remarks";
                 }
 
-                // Auto-resize remarks column
                 if (dgv.Columns.Contains("adviser_remarks"))
                     dgv.Columns["adviser_remarks"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             }
@@ -472,7 +453,6 @@ namespace SCAIS
                 this.Close();
         }
 
-        // Designer-generated controls may define lblWelcome and btnLogout; btnLogout's click still handled in designer.
         private void btnLogout_Click(object sender, EventArgs e)
         {
             Logout_Click(sender, e);
