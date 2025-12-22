@@ -153,10 +153,10 @@
   <ItemGroup>
     <Content Include="CheckLastLogin.sql" />
     <Content Include="SCAISDB.mdf">
-      <CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SCAISDB_log.ldf">
-      <CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <DependentUpon>SCAISDB.mdf</DependentUpon>
     </Content>
   </ItemGroup>
