@@ -1,20 +1,57 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
+
 
 namespace SCAIS
 {
     public partial class frmStudent : Form
     {
-        private int studentId;
-        private string studentEmail;
-        private Student studentModel;
+        private readonly int studentId;
+        private readonly string studentEmail;
+        private readonly Student studentModel;
         private Button currentActiveButton;
-        private Panel panelSidebar;
-        private Panel panelContent; 
+        private void SetActiveButton(Button btn)
+        {
+            if (currentActiveButton != null && currentActiveButton != btn)
+                currentActiveButton.BackColor = Color.FromArgb(52, 73, 94); // normal sidebar
+
+            btn.BackColor = Color.FromArgb(41, 128, 185); // active highlight
+            currentActiveButton = btn;
+        }
+
+        private DataTable GetStudentSummary(int studentId)
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            var conn = dbConn.GetConnection();
+
+            string studentQuery = @"
+        SELECT 
+            s.first_name + ' ' + s.last_name AS name, 
+            s.student_number, 
+            sp.specialization_name, 
+            s.current_semester, 
+            s.gpa, 
+            s.completed_credit_hours
+        FROM students s
+        LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+        WHERE s.student_id = @studentId";
+
+            using (var cmd = new SqlCommand(studentQuery, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                using (var adapter = new SqlDataAdapter(cmd))
+                {
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    return dt;
+                }
+            }
+        }
+
 
         public frmStudent(int studentId, string email)
         {
@@ -26,160 +63,125 @@ namespace SCAIS
 
         private void frmStudent_Load(object sender, EventArgs e)
         {
+            SetActiveButton(btnAcademicRecord);
+
             lblWelcome.Text = $"Welcome, {studentEmail}";
-            BuildLayout();
-            var btn = CreateSidebarButton(">  Academic Record", 20, AcademicRecord_Click);
-            panelSidebar.Controls.Add(btn);
-            SetActiveButton(btn);
-            LoadAcademicRecord();
+            LoadAcademicRecord(); // default page
+
         }
 
-        private void BuildLayout()
+        private void ClearContent()
         {
-            if (panelSidebar == null)
-            {
-                panelSidebar = new Panel
-                {
-                    BackColor = Color.FromArgb(44, 62, 80),
-                    Width = 250,
-                    Dock = DockStyle.Left,
-                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left
-                };
-
-                this.Controls.Add(panelSidebar);
-            }
-
-            // Ensure Designer panelMain uses padding for content
-            this.panelMain.Padding = new Padding(20);
-
-            // Create content panel inside designer panelMain
-            if (panelContent == null)
-            {
-                panelContent = new Panel
-                {
-                    BackColor = Color.White,
-                    Dock = DockStyle.Fill,
-                    Padding = new Padding(30),
-                    AutoScroll = true
-                };
-
-                // Remove placeholder controls inside panelMain and add panelContent
-                this.panelMain.Controls.Clear();
-                this.panelMain.Controls.Add(panelContent);
-            }
-
-            panelSidebar.Controls.Clear();
-
-            Button btnAcademicRecord = CreateSidebarButton(">  Academic Record", 20, AcademicRecord_Click);
-            Button btnEligibleCourses = CreateSidebarButton(">  Eligible Courses", 80, EligibleCourses_Click);
-            Button btnSubmitPreferences = CreateSidebarButton(">  Submit Preferences", 140, SubmitPreferences_Click);
-            Button btnApprovedCourses = CreateSidebarButton(">  Approved Courses & Remarks", 200, ApprovedCourses_Click);
-            Button btnLogoutSide = CreateSidebarButton(">  Logout", 260, Logout_Click, backColor: Color.FromArgb(231, 76, 60));
-
-            panelSidebar.Controls.Add(btnAcademicRecord);
-            panelSidebar.Controls.Add(btnEligibleCourses);
-            panelSidebar.Controls.Add(btnSubmitPreferences);
-            panelSidebar.Controls.Add(btnApprovedCourses);
-            panelSidebar.Controls.Add(btnLogoutSide);
+            pnlContent.Controls.Clear();
         }
+   
+        // Sidebar button events (connect in Designer by double-clicking each button)
+        private void btnAcademicRecord_Click(object sender, EventArgs e) => LoadAcademicRecord();
+        private void btnEligibleCourses_Click(object sender, EventArgs e) => LoadEligibleCourses();
+        private void btnSubmitPreferences_Click(object sender, EventArgs e) => LoadSubmitPreferences();
+        private void btnApprovedCourses_Click(object sender, EventArgs e) => LoadApprovedCourses();
 
-        private Button CreateSidebarButton(string text, int top, EventHandler onClick, Color? backColor = null)
+        private void btnLogoutSide_Click(object sender, EventArgs e) => Logout();
+        private void btnLogout_Click(object sender, EventArgs e) => Logout();
+
+        private void Logout()
         {
-            Button btn = new Button
-            {
-                BackColor = backColor ?? Color.FromArgb(52, 73, 94),
-                Cursor = Cursors.Hand,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 11F),
-                ForeColor = Color.White,
-                Location = new Point(0, top),
-                Padding = new Padding(20, 0, 0, 0),
-                Size = new Size(250, 60),
-                Text = text,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            btn.Click += onClick;
-            return btn;
+            var result = MessageBox.Show("Are you sure you want to logout?",
+                "Confirm Logout", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+                this.Close();
         }
 
-        private void SetActiveButton(Button button)
-        {
-            if (currentActiveButton != null)
-                currentActiveButton.BackColor = Color.FromArgb(52, 73, 94);
-
-            button.BackColor = Color.FromArgb(41, 128, 185);
-            currentActiveButton = button;
-        }
-
-        private void ClearContentPanel()
-        {
-            panelContent.Controls.Clear();
-        }
-
-        // Page: Academic Record
-        private void AcademicRecord_Click(object sender, EventArgs e)
-        {
-            SetActiveButton((Button)sender);
-            LoadAcademicRecord();
-        }
-
+        // TODO: We'll add these next step
         private void LoadAcademicRecord()
         {
-            ClearContentPanel();
+            ClearContent();
 
-            Label lblTitle = new Label
+            // Title
+            var lblTitle = new Label
             {
                 Text = "My Academic Record",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(30, 30),
-                AutoSize = true
+                AutoSize = true,
+                Location = new Point(20, 20)
             };
-            panelContent.Controls.Add(lblTitle);
+            pnlContent.Controls.Add(lblTitle);
 
-            Label lblSummary = new Label
+            // Summary heading
+            var lblSummary = new Label
             {
                 Text = "Summary",
                 Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                Location = new Point(30, 70),
-                AutoSize = true
+                AutoSize = true,
+                Location = new Point(20, 60)
             };
-            panelContent.Controls.Add(lblSummary);
+            pnlContent.Controls.Add(lblSummary);
 
             try
             {
+                // Summary info
                 DataTable summaryTable = GetStudentSummary(studentId);
-                int top = 100;
-
                 if (summaryTable.Rows.Count > 0)
                 {
                     DataRow r = summaryTable.Rows[0];
+                    int top = 90;
 
-                    Label lblName = new Label { Text = $"Name: {r["name"]}", Location = new Point(30, top), AutoSize = true, Font = new Font("Segoe UI", 10) };
-                    Label lblNumber = new Label { Text = $"Student Number: {r["student_number"]}", Location = new Point(30, top + 25), AutoSize = true, Font = new Font("Segoe UI", 10) };
-                    Label lblSpec = new Label { Text = $"Specialization: {r["specialization_name"]}", Location = new Point(30, top + 50), AutoSize = true, Font = new Font("Segoe UI", 10) };
-                    Label lblGPA = new Label { Text = $"GPA: {r["gpa"]}", Location = new Point(350, top), AutoSize = true, Font = new Font("Segoe UI", 10) };
-                    Label lblCredits = new Label { Text = $"Completed Credits: {r["completed_credit_hours"]}", Location = new Point(350, top + 25), AutoSize = true, Font = new Font("Segoe UI", 10) };
+                    pnlContent.Controls.Add(new Label
+                    {
+                        Text = $"Name: {r["name"]}",
+                        Location = new Point(20, top),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10)
+                    });
 
-                    panelContent.Controls.Add(lblName);
-                    panelContent.Controls.Add(lblNumber);
-                    panelContent.Controls.Add(lblSpec);
-                    panelContent.Controls.Add(lblGPA);
-                    panelContent.Controls.Add(lblCredits);
+                    pnlContent.Controls.Add(new Label
+                    {
+                        Text = $"Student Number: {r["student_number"]}",
+                        Location = new Point(20, top + 25),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10)
+                    });
+
+                    pnlContent.Controls.Add(new Label
+                    {
+                        Text = $"Specialization: {r["specialization_name"]}",
+                        Location = new Point(20, top + 50),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10)
+                    });
+
+                    pnlContent.Controls.Add(new Label
+                    {
+                        Text = $"GPA: {r["gpa"]}",
+                        Location = new Point(350, top),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10)
+                    });
+
+                    pnlContent.Controls.Add(new Label
+                    {
+                        Text = $"Completed Credits: {r["completed_credit_hours"]}",
+                        Location = new Point(350, top + 25),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10)
+                    });
                 }
 
-                DataGridView dgvHistory = new DataGridView
+                // Grid
+                var dgvHistory = new DataGridView
                 {
-                    Location = new Point(30, 180),
-                    Size = new Size(850, 380),
+                    Location = new Point(20, 170),
+                    Size = new Size(pnlContent.Width - 40, pnlContent.Height - 200),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                     AllowUserToAddRows = false,
                     ReadOnly = true,
                     AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                     BackgroundColor = Color.White,
                     BorderStyle = BorderStyle.None
                 };
-                panelContent.Controls.Add(dgvHistory);
+                pnlContent.Controls.Add(dgvHistory);
 
                 DataTable dtHistory = studentModel.GetAcademicHistory(studentId);
                 dgvHistory.DataSource = dtHistory;
@@ -187,275 +189,400 @@ namespace SCAIS
                 if (dtHistory.Columns.Contains("course_code"))
                 {
                     dgvHistory.Columns["course_code"].HeaderText = "Course Code";
-                    dgvHistory.Columns["course_name"].HeaderText = "Course Name";
-                    dgvHistory.Columns["credit_hours"].HeaderText = "Credits";
-                    dgvHistory.Columns["grade"].HeaderText = "Grade";
-                    dgvHistory.Columns["status"].HeaderText = "Status";
-                    dgvHistory.Columns["semester"].HeaderText = "Semester";
+                    if (dgvHistory.Columns.Contains("course_name"))
+                        dgvHistory.Columns["course_name"].HeaderText = "Course Name";
+                    if (dgvHistory.Columns.Contains("credit_hours"))
+                        dgvHistory.Columns["credit_hours"].HeaderText = "Credits";
+                    if (dgvHistory.Columns.Contains("grade"))
+                        dgvHistory.Columns["grade"].HeaderText = "Grade";
+                    if (dgvHistory.Columns.Contains("status"))
+                        dgvHistory.Columns["status"].HeaderText = "Status";
+                    if (dgvHistory.Columns.Contains("semester"))
+                        dgvHistory.Columns["semester"].HeaderText = "Semester";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading academic record: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading academic record: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private DataTable GetStudentSummary(int studentId)
-        {
-            try
-            {
-                DatabaseConnection dbConn = DatabaseConnection.Instance;
-                var conn = dbConn.GetConnection();
-                string studentQuery = @"SELECT s.first_name + ' ' + s.last_name AS name, 
-                                   s.student_number, sp.specialization_name, 
-                                   s.current_semester, s.gpa, s.completed_credit_hours
-                                   FROM students s
-                                   LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
-                                   WHERE s.student_id = @studentId";
-
-                using (var cmd = new System.Data.SqlClient.SqlCommand(studentQuery, conn))
-                {
-                    cmd.Parameters.AddWithValue("@studentId", studentId);
-                    System.Data.SqlClient.SqlDataAdapter adapter = new System.Data.SqlClient.SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    return dt;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error loading student summary: {ex.Message}");
-            }
-        }
-
-        // Eligible Courses
-        private void EligibleCourses_Click(object sender, EventArgs e)
-        {
-            SetActiveButton((Button)sender);
-            LoadEligibleCourses();
         }
 
         private void LoadEligibleCourses()
         {
-            ClearContentPanel();
+            ClearContent();
 
-            Label lblTitle = new Label
+            // Title
+            var lblTitle = new Label
             {
                 Text = "Eligible Courses",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(30, 30),
-                AutoSize = true
+                AutoSize = true,
+                Location = new Point(20, 20)
             };
-            panelContent.Controls.Add(lblTitle);
+            pnlContent.Controls.Add(lblTitle);
 
-            DataGridView dgv = new DataGridView
+            // Grid
+            var dgv = new DataGridView
             {
-                Location = new Point(30, 80),
-                Size = new Size(850, 430),
+                Location = new Point(20, 70),
+                Size = new Size(pnlContent.Width - 40, pnlContent.Height - 90),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 ReadOnly = true,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None
+                BorderStyle = BorderStyle.None,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false
             };
-            panelContent.Controls.Add(dgv);
+            pnlContent.Controls.Add(dgv);
 
             try
             {
                 DataTable dt = studentModel.GetEligibleCourses(studentId);
                 dgv.DataSource = dt;
 
+                // Friendly headers + hide IDs
                 if (dt.Columns.Contains("course_code"))
                 {
                     dgv.Columns["course_code"].HeaderText = "Course Code";
-                    dgv.Columns["course_name"].HeaderText = "Course Name";
-                    dgv.Columns["credit_hours"].HeaderText = "Credits";
-                    dgv.Columns["course_type"].HeaderText = "Type";
-                    dgv.Columns["eligibility_status"].HeaderText = "Status";
-                    if (dgv.Columns.Contains("course_id"))
-                        dgv.Columns["course_id"].Visible = false;
+                    if (dgv.Columns.Contains("course_name"))
+                        dgv.Columns["course_name"].HeaderText = "Course Name";
+                    if (dgv.Columns.Contains("credit_hours"))
+                        dgv.Columns["credit_hours"].HeaderText = "Credits";
+                    if (dgv.Columns.Contains("course_type"))
+                        dgv.Columns["course_type"].HeaderText = "Type";
+                    if (dgv.Columns.Contains("eligibility_status"))
+                        dgv.Columns["eligibility_status"].HeaderText = "Status";
+                }
+
+                if (dgv.Columns.Contains("course_id"))
+                    dgv.Columns["course_id"].Visible = false;
+
+                // If nothing returned
+                if (dt.Rows.Count == 0)
+                {
+                    MessageBox.Show("No eligible courses found for this student (or all already taken).",
+                        "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading eligible courses: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading eligible courses: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        // Submit Preferences
-        private void SubmitPreferences_Click(object sender, EventArgs e)
-        {
-            SetActiveButton((Button)sender);
-            LoadSubmitPreferences();
         }
 
         private void LoadSubmitPreferences()
         {
-            ClearContentPanel();
+            ClearContent();
 
-            Label lblTitle = new Label
+            // Title
+            var lblTitle = new Label
             {
                 Text = "Submit Preferred Courses",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(30, 30),
-                AutoSize = true
+                AutoSize = true,
+                Location = new Point(20, 20)
             };
-            panelContent.Controls.Add(lblTitle);
+            pnlContent.Controls.Add(lblTitle);
 
-            DataGridView dgv = new DataGridView
+            // Info label (optional)
+            var lblInfo = new Label
             {
-                Location = new Point(30, 80),
-                Size = new Size(850, 360),
+                Text = "Tick the courses you want, then click Submit.",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.FromArgb(90, 90, 90),
+                AutoSize = true,
+                Location = new Point(20, 55)
+            };
+            pnlContent.Controls.Add(lblInfo);
+
+            // Grid
+            var dgv = new DataGridView
+            {
+                Location = new Point(20, 85),
+                Size = new Size(pnlContent.Width - 40, pnlContent.Height - 160),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 ReadOnly = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor = Color.White,
                 BorderStyle = BorderStyle.None,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false
             };
-            panelContent.Controls.Add(dgv);
+            pnlContent.Controls.Add(dgv);
 
-            Button btnSubmit = new Button
+            // Submit button
+            var btnSubmit = new Button
             {
                 Text = "Submit Selected",
-                Location = new Point(30, 460),
-                Size = new Size(160, 45),
+                Size = new Size(170, 45),
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                Location = new Point(20, pnlContent.Height - 60),
                 BackColor = Color.FromArgb(52, 152, 219),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
-            panelContent.Controls.Add(btnSubmit);
+            btnSubmit.FlatAppearance.BorderSize = 0;
+            pnlContent.Controls.Add(btnSubmit);
 
             try
             {
+                // Load eligible courses as preference list
                 DataTable dt = studentModel.GetEligibleCourses(studentId);
                 dgv.DataSource = dt;
 
-                DataGridViewCheckBoxColumn chk = new DataGridViewCheckBoxColumn
+                // Add checkbox column ONCE
+                if (!dgv.Columns.Contains("chkSelect"))
                 {
-                    HeaderText = "Select",
-                    Width = 50,
-                    Name = "chkSelect"
-                };
-                dgv.Columns.Insert(0, chk);
+                    var chk = new DataGridViewCheckBoxColumn
+                    {
+                        Name = "chkSelect",
+                        HeaderText = "Select",
+                        Width = 60,
+                        ReadOnly = false
+                    };
+                    dgv.Columns.Insert(0, chk);
+                }
 
-                if (dt.Columns.Contains("course_id"))
+                // Hide course_id but keep it for submission
+                if (dgv.Columns.Contains("course_id"))
                     dgv.Columns["course_id"].Visible = false;
 
-                btnSubmit.Click += (s, ev) =>
+                // Friendly column headers
+                if (dgv.Columns.Contains("course_code"))
+                    dgv.Columns["course_code"].HeaderText = "Course Code";
+                if (dgv.Columns.Contains("course_name"))
+                    dgv.Columns["course_name"].HeaderText = "Course Name";
+                if (dgv.Columns.Contains("credit_hours"))
+                    dgv.Columns["credit_hours"].HeaderText = "Credits";
+                if (dgv.Columns.Contains("course_type"))
+                    dgv.Columns["course_type"].HeaderText = "Type";
+                if (dgv.Columns.Contains("eligibility_status"))
+                    dgv.Columns["eligibility_status"].HeaderText = "Status";
+
+                // Nice: make checkbox editable on single click
+                dgv.CurrentCellDirtyStateChanged += (s, e) =>
                 {
-                    List<int> selectedCourseIds = new List<int>();
+                    if (dgv.IsCurrentCellDirty)
+                        dgv.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                };
+
+                btnSubmit.Click += (s, e) =>
+                {
+                    // Collect selected IDs
+                    var selectedCourseIds = new List<int>();
+
                     foreach (DataGridViewRow row in dgv.Rows)
                     {
-                        bool isChecked = false;
-                        if (row.Cells["chkSelect"].Value != null)
-                            isChecked = Convert.ToBoolean(row.Cells["chkSelect"].Value);
+                        bool isChecked = row.Cells["chkSelect"].Value != null &&
+                                         Convert.ToBoolean(row.Cells["chkSelect"].Value);
 
-                        if (isChecked)
-                        {
-                            if (dt.Columns.Contains("course_id"))
-                            {
-                                int cid = Convert.ToInt32(row.Cells["course_id"].Value);
-                                selectedCourseIds.Add(cid);
-                            }
-                        }
+                        if (!isChecked) continue;
+
+                        if (!dgv.Columns.Contains("course_id") || row.Cells["course_id"].Value == null)
+                            continue;
+
+                        selectedCourseIds.Add(Convert.ToInt32(row.Cells["course_id"].Value));
                     }
 
                     if (selectedCourseIds.Count == 0)
                     {
-                        MessageBox.Show("Please select at least one course to submit.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show("Please select at least one course.", "No Selection",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
 
                     try
                     {
                         var result = studentModel.SubmitCoursePreferences(studentId, selectedCourseIds);
-                        MessageBox.Show($"Submitted: {result.inserted} course(s). Skipped: {result.skipped} (duplicates/constraints).", "Submission Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadSubmitPreferences(); // refresh grid
+
+                        MessageBox.Show(
+                            $"Submitted: {result.inserted} course(s).\nSkipped: {result.skipped} (duplicates/constraints).",
+                            "Submission Result",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        // Refresh (clears selections + updates if needed)
+                        LoadSubmitPreferences();
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error submitting preferences: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Error submitting preferences: {ex.Message}", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 };
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading eligible courses: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading eligible courses: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        // Approved Courses + Remarks
-        private void ApprovedCourses_Click(object sender, EventArgs e)
-        {
-            SetActiveButton((Button)sender);
-            LoadApprovedCourses();
-        }
-
         private void LoadApprovedCourses()
         {
-            ClearContentPanel();
+            ClearContent();
 
-            Label lblTitle = new Label
+            // Title
+            var lblTitle = new Label
             {
                 Text = "Approved Courses & Adviser Remarks",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(30, 30),
-                AutoSize = true
+                AutoSize = true,
+                Location = new Point(20, 20)
             };
-            panelContent.Controls.Add(lblTitle);
+            pnlContent.Controls.Add(lblTitle);
 
-            DataGridView dgv = new DataGridView
+            // Grid (top)
+            var dgv = new DataGridView
             {
-                Location = new Point(30, 80),
-                Size = new Size(850, 430),
+                Location = new Point(20, 70),
+                Size = new Size(pnlContent.Width - 40, pnlContent.Height - 220),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 AllowUserToAddRows = false,
                 ReadOnly = true,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None
+                BorderStyle = BorderStyle.None,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false
             };
-            panelContent.Controls.Add(dgv);
+            pnlContent.Controls.Add(dgv);
+
+            // Remarks label
+            var lblRemarks = new Label
+            {
+                Text = "Adviser Remarks",
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                AutoSize = true,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                Location = new Point(20, pnlContent.Height - 140)
+            };
+            pnlContent.Controls.Add(lblRemarks);
+
+            // Remarks box (bottom)
+            var txtRemarks = new TextBox
+            {
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Location = new Point(20, pnlContent.Height - 110),
+                Size = new Size(pnlContent.Width - 40, 90),
+                Font = new Font("Segoe UI", 10)
+            };
+            pnlContent.Controls.Add(txtRemarks);
 
             try
             {
                 DataTable dt = studentModel.GetApprovedCoursesAndRemarks(studentId);
                 dgv.DataSource = dt;
 
-                if (dt.Columns.Contains("course_code"))
-                {
+                // Friendly headers
+                if (dgv.Columns.Contains("course_code"))
                     dgv.Columns["course_code"].HeaderText = "Course Code";
+                if (dgv.Columns.Contains("course_name"))
                     dgv.Columns["course_name"].HeaderText = "Course Name";
+                if (dgv.Columns.Contains("credit_hours"))
                     dgv.Columns["credit_hours"].HeaderText = "Credits";
+                if (dgv.Columns.Contains("semester"))
                     dgv.Columns["semester"].HeaderText = "Semester";
+                if (dgv.Columns.Contains("approval_status"))
                     dgv.Columns["approval_status"].HeaderText = "Status";
-                    dgv.Columns["adviser_remarks"].HeaderText = "Adviser Remarks";
+
+                // Hide IDs if exist
+                if (dgv.Columns.Contains("course_id"))
+                    dgv.Columns["course_id"].Visible = false;
+
+                // Hide remarks column in grid (we show it below)
+                if (dgv.Columns.Contains("adviser_remarks"))
+                    dgv.Columns["adviser_remarks"].Visible = false;
+
+                // Show remarks for selected row
+                void UpdateRemarksFromSelectedRow()
+                {
+                    if (dgv.CurrentRow == null)
+                    {
+                        txtRemarks.Text = "";
+                        return;
+                    }
+
+                    if (dgv.Columns.Contains("adviser_remarks"))
+                    {
+                        var val = dgv.CurrentRow.Cells["adviser_remarks"].Value;
+                        txtRemarks.Text = val == null ? "" : val.ToString();
+                    }
+                    else
+                    {
+                        txtRemarks.Text = "";
+                    }
                 }
 
-                if (dgv.Columns.Contains("adviser_remarks"))
-                    dgv.Columns["adviser_remarks"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+                dgv.SelectionChanged += (s, e) => UpdateRemarksFromSelectedRow();
+
+                // Select first row automatically
+                if (dgv.Rows.Count > 0)
+                {
+                    dgv.Rows[0].Selected = true;
+                    UpdateRemarksFromSelectedRow();
+                }
+                else
+                {
+                    txtRemarks.Text = "No approved courses found yet.";
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading approved courses: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading approved courses: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void Logout_Click(object sender, EventArgs e)
+        private void btnAcademicRecord_Click_1(object sender, EventArgs e)
         {
-            DialogResult result = MessageBox.Show("Are you sure you want to logout?", "Confirm Logout", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (result == DialogResult.Yes)
-                this.Close();
+            SetActiveButton(btnAcademicRecord);
+            LoadAcademicRecord();
         }
 
-        private void btnLogout_Click(object sender, EventArgs e)
+        private void btnEligibleCourses_Click_1(object sender, EventArgs e)
         {
-            Logout_Click(sender, e);
+            SetActiveButton(btnEligibleCourses);
+
+            LoadEligibleCourses();
         }
+
+        private void btnSubmitPreferences_Click_1(object sender, EventArgs e)
+        {
+            SetActiveButton(btnSubmitPreferences);
+
+            LoadSubmitPreferences();
+        }
+
+        private void btnApprovedCourses_Click_1(object sender, EventArgs e)
+        {
+            SetActiveButton(btnApprovedCourses);
+
+            LoadApprovedCourses();
+        }
+
+        private void btnLogoutSide_Click_1(object sender, EventArgs e)
+        {
+            SetActiveButton(btnLogoutSide);
+
+            Logout();
+        }
+
+  
     }
 }
