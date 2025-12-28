@@ -55,9 +55,8 @@ namespace SCAIS
             this.panelHeader.Controls.Add(this.lblTitle);
             this.panelHeader.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelHeader.Location = new System.Drawing.Point(0, 0);
-            this.panelHeader.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.panelHeader.Name = "panelHeader";
-            this.panelHeader.Size = new System.Drawing.Size(1600, 123);
+            this.panelHeader.Size = new System.Drawing.Size(1200, 100);
             this.panelHeader.TabIndex = 0;
             // 
             // lblWelcome
@@ -65,10 +64,9 @@ namespace SCAIS
             this.lblWelcome.AutoSize = true;
             this.lblWelcome.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblWelcome.ForeColor = System.Drawing.Color.White;
-            this.lblWelcome.Location = new System.Drawing.Point(27, 86);
-            this.lblWelcome.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblWelcome.Location = new System.Drawing.Point(20, 70);
             this.lblWelcome.Name = "lblWelcome";
-            this.lblWelcome.Size = new System.Drawing.Size(80, 23);
+            this.lblWelcome.Size = new System.Drawing.Size(64, 19);
             this.lblWelcome.TabIndex = 2;
             this.lblWelcome.Text = "Welcome";
             // 
@@ -79,10 +77,9 @@ namespace SCAIS
             this.btnLogout.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogout.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnLogout.ForeColor = System.Drawing.Color.White;
-            this.btnLogout.Location = new System.Drawing.Point(1440, 37);
-            this.btnLogout.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnLogout.Location = new System.Drawing.Point(1080, 30);
             this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(133, 49);
+            this.btnLogout.Size = new System.Drawing.Size(100, 40);
             this.btnLogout.TabIndex = 1;
             this.btnLogout.Text = "Logout";
             this.btnLogout.UseVisualStyleBackColor = false;
@@ -92,10 +89,9 @@ namespace SCAIS
             // 
             this.lblTitle.Font = new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTitle.ForeColor = System.Drawing.Color.White;
-            this.lblTitle.Location = new System.Drawing.Point(27, 25);
-            this.lblTitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTitle.Location = new System.Drawing.Point(20, 20);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(1067, 49);
+            this.lblTitle.Size = new System.Drawing.Size(800, 40);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Adviser Dashboard - SCAIS";
             this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -109,10 +105,9 @@ namespace SCAIS
             this.panelSidebar.Controls.Add(this.btnApprovePlans);
             this.panelSidebar.Controls.Add(this.btnGenerateReports);
             this.panelSidebar.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panelSidebar.Location = new System.Drawing.Point(0, 123);
-            this.panelSidebar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panelSidebar.Location = new System.Drawing.Point(0, 100);
             this.panelSidebar.Name = "panelSidebar";
-            this.panelSidebar.Size = new System.Drawing.Size(333, 739);
+            this.panelSidebar.Size = new System.Drawing.Size(250, 600);
             this.panelSidebar.TabIndex = 1;
             // 
             // btnMyAdvisees
@@ -123,11 +118,10 @@ namespace SCAIS
             this.btnMyAdvisees.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMyAdvisees.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMyAdvisees.ForeColor = System.Drawing.Color.White;
-            this.btnMyAdvisees.Location = new System.Drawing.Point(0, 25);
-            this.btnMyAdvisees.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnMyAdvisees.Location = new System.Drawing.Point(0, 20);
             this.btnMyAdvisees.Name = "btnMyAdvisees";
-            this.btnMyAdvisees.Padding = new System.Windows.Forms.Padding(27, 0, 0, 0);
-            this.btnMyAdvisees.Size = new System.Drawing.Size(333, 74);
+            this.btnMyAdvisees.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            this.btnMyAdvisees.Size = new System.Drawing.Size(250, 60);
             this.btnMyAdvisees.TabIndex = 0;
             this.btnMyAdvisees.Text = ">  My Advisees";
             this.btnMyAdvisees.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -142,11 +136,10 @@ namespace SCAIS
             this.btnAcademicHistory.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnAcademicHistory.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnAcademicHistory.ForeColor = System.Drawing.Color.White;
-            this.btnAcademicHistory.Location = new System.Drawing.Point(0, 98);
-            this.btnAcademicHistory.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnAcademicHistory.Location = new System.Drawing.Point(0, 80);
             this.btnAcademicHistory.Name = "btnAcademicHistory";
-            this.btnAcademicHistory.Padding = new System.Windows.Forms.Padding(27, 0, 0, 0);
-            this.btnAcademicHistory.Size = new System.Drawing.Size(333, 74);
+            this.btnAcademicHistory.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            this.btnAcademicHistory.Size = new System.Drawing.Size(250, 60);
             this.btnAcademicHistory.TabIndex = 1;
             this.btnAcademicHistory.Text = ">  Academic History";
             this.btnAcademicHistory.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -161,11 +154,10 @@ namespace SCAIS
             this.btnCourseRecommendations.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCourseRecommendations.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCourseRecommendations.ForeColor = System.Drawing.Color.White;
-            this.btnCourseRecommendations.Location = new System.Drawing.Point(0, 172);
-            this.btnCourseRecommendations.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnCourseRecommendations.Location = new System.Drawing.Point(0, 140);
             this.btnCourseRecommendations.Name = "btnCourseRecommendations";
-            this.btnCourseRecommendations.Padding = new System.Windows.Forms.Padding(27, 0, 0, 0);
-            this.btnCourseRecommendations.Size = new System.Drawing.Size(333, 74);
+            this.btnCourseRecommendations.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            this.btnCourseRecommendations.Size = new System.Drawing.Size(250, 60);
             this.btnCourseRecommendations.TabIndex = 2;
             this.btnCourseRecommendations.Text = ">  Course Recommendations";
             this.btnCourseRecommendations.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -180,11 +172,10 @@ namespace SCAIS
             this.btnApprovePlans.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnApprovePlans.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnApprovePlans.ForeColor = System.Drawing.Color.White;
-            this.btnApprovePlans.Location = new System.Drawing.Point(0, 246);
-            this.btnApprovePlans.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnApprovePlans.Location = new System.Drawing.Point(0, 200);
             this.btnApprovePlans.Name = "btnApprovePlans";
-            this.btnApprovePlans.Padding = new System.Windows.Forms.Padding(27, 0, 0, 0);
-            this.btnApprovePlans.Size = new System.Drawing.Size(333, 74);
+            this.btnApprovePlans.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            this.btnApprovePlans.Size = new System.Drawing.Size(250, 60);
             this.btnApprovePlans.TabIndex = 3;
             this.btnApprovePlans.Text = ">  Approve Course Plans";
             this.btnApprovePlans.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -199,11 +190,10 @@ namespace SCAIS
             this.btnGenerateReports.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnGenerateReports.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGenerateReports.ForeColor = System.Drawing.Color.White;
-            this.btnGenerateReports.Location = new System.Drawing.Point(0, 320);
-            this.btnGenerateReports.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnGenerateReports.Location = new System.Drawing.Point(0, 260);
             this.btnGenerateReports.Name = "btnGenerateReports";
-            this.btnGenerateReports.Padding = new System.Windows.Forms.Padding(27, 0, 0, 0);
-            this.btnGenerateReports.Size = new System.Drawing.Size(333, 74);
+            this.btnGenerateReports.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            this.btnGenerateReports.Size = new System.Drawing.Size(250, 60);
             this.btnGenerateReports.TabIndex = 4;
             this.btnGenerateReports.Text = ">  Generate Reports";
             this.btnGenerateReports.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -215,11 +205,10 @@ namespace SCAIS
             this.panelMain.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(236)))), ((int)(((byte)(240)))), ((int)(((byte)(241)))));
             this.panelMain.Controls.Add(this.panelContent);
             this.panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelMain.Location = new System.Drawing.Point(333, 123);
-            this.panelMain.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panelMain.Location = new System.Drawing.Point(250, 100);
             this.panelMain.Name = "panelMain";
-            this.panelMain.Padding = new System.Windows.Forms.Padding(27, 25, 27, 25);
-            this.panelMain.Size = new System.Drawing.Size(1267, 739);
+            this.panelMain.Padding = new System.Windows.Forms.Padding(20);
+            this.panelMain.Size = new System.Drawing.Size(950, 600);
             this.panelMain.TabIndex = 2;
             // 
             // panelContent
@@ -227,11 +216,10 @@ namespace SCAIS
             this.panelContent.BackColor = System.Drawing.Color.White;
             this.panelContent.Controls.Add(this.lblContentTitle);
             this.panelContent.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelContent.Location = new System.Drawing.Point(27, 25);
-            this.panelContent.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panelContent.Location = new System.Drawing.Point(20, 20);
             this.panelContent.Name = "panelContent";
-            this.panelContent.Padding = new System.Windows.Forms.Padding(40, 37, 40, 37);
-            this.panelContent.Size = new System.Drawing.Size(1213, 689);
+            this.panelContent.Padding = new System.Windows.Forms.Padding(30);
+            this.panelContent.Size = new System.Drawing.Size(910, 560);
             this.panelContent.TabIndex = 0;
             // 
             // lblContentTitle
@@ -239,24 +227,22 @@ namespace SCAIS
             this.lblContentTitle.AutoSize = true;
             this.lblContentTitle.Font = new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblContentTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(44)))), ((int)(((byte)(62)))), ((int)(((byte)(80)))));
-            this.lblContentTitle.Location = new System.Drawing.Point(40, 37);
-            this.lblContentTitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblContentTitle.Location = new System.Drawing.Point(30, 30);
             this.lblContentTitle.Name = "lblContentTitle";
-            this.lblContentTitle.Size = new System.Drawing.Size(422, 37);
+            this.lblContentTitle.Size = new System.Drawing.Size(457, 30);
             this.lblContentTitle.TabIndex = 0;
             this.lblContentTitle.Text = "Welcome to Adviser Dashboard";
             this.lblContentTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // frmAdviser
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1600, 862);
+            this.ClientSize = new System.Drawing.Size(1200, 700);
             this.Controls.Add(this.panelMain);
             this.Controls.Add(this.panelSidebar);
             this.Controls.Add(this.panelHeader);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.MinimumSize = new System.Drawing.Size(1594, 851);
+            this.MinimumSize = new System.Drawing.Size(1200, 700);
             this.Name = "frmAdviser";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SCAIS - Adviser Dashboard";

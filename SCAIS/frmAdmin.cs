@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -12,23 +13,36 @@ namespace SCAIS
 {
     public partial class frmAdmin : Form
     {
+        private Administrator administrator;
         private int adminId;
         private string adminEmail;
         private Button currentActiveButton;
         
         private void SetActiveButton(Button btn)
         {
-            if (currentActiveButton != null && currentActiveButton != btn)
-                currentActiveButton.BackColor = Color.FromArgb(88, 92, 100); // normal sidebar
+            if (currentActiveButton != null)
+            {
+                currentActiveButton.BackColor = Color.FromArgb(60, 63, 65);
+            }
 
-            btn.BackColor = Color.FromArgb(120, 130, 145); // active highlight
+            btn.BackColor = Color.FromArgb(41, 128, 185);
             currentActiveButton = btn;
         }
         public frmAdmin(int adminId, string email)
         {
             InitializeComponent();
-            this.adminId = adminId;
-            this.adminEmail = email;
+            try
+            {
+                administrator = new Administrator(adminId, email);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error initializing admin: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+            }
+            //   this.adminId = adminId;
+             //this.adminEmail = email;
 
         }
 
@@ -113,29 +127,12 @@ namespace SCAIS
             panelContent.Controls.Add(subPanel);
             subPanel.Controls.Clear();
 
-            // Add a label for the user name input
-            Label lblUserName = new Label
-            {
-                Text = "User Name: ",
-                Location = new Point(30, 150),
-                AutoSize = true
-            };
-            subPanel.Controls.Add(lblUserName);
-
-            // Add a textbox for the user name input
-            TextBox txtUserName = new TextBox
-            {
-                Name = "txtUserEmail",
-                Location = new Point(200, 150),
-                Size = new Size(200, 20)
-            };
-            subPanel.Controls.Add(txtUserName);
-
             // Add a label for the user email input
             Label lblUserEmail = new Label
             {
                 Text = "User Email: ",
-                Location = new Point(30, 200),
+                Location = new Point(30, 150),
+                Font = new Font("Segoe UI", 10),
                 AutoSize = true
             };
             subPanel.Controls.Add(lblUserEmail);
@@ -143,8 +140,8 @@ namespace SCAIS
             // Add a textbox for the user email input
             TextBox txtUserEmail = new TextBox
             {
-                Name = "txtUserName",
-                Location = new Point(200, 200),
+                Name = "txtUserEmail",
+                Location = new Point(200, 150),
                 Size = new Size(200, 20)
             };
             subPanel.Controls.Add(txtUserEmail);
@@ -153,7 +150,7 @@ namespace SCAIS
             Label lblPassword = new Label
             {
                 Text = "Enter Initial Password:",
-                Location = new Point(30, 250),
+                Location = new Point(30, 200),
                 AutoSize = true
             };
             subPanel.Controls.Add(lblPassword);
@@ -162,7 +159,7 @@ namespace SCAIS
             TextBox txtPassword = new TextBox
             {
                 Name = "txtPassword",
-                Location = new Point(200, 250),
+                Location = new Point(200, 200),
                 Size = new Size(200, 20),
                 UseSystemPasswordChar = true
             };
@@ -172,7 +169,7 @@ namespace SCAIS
             Label lblRole = new Label
             {
                 Text = "Select Role:",
-                Location = new Point(30, 300),
+                Location = new Point(30, 250),
                 AutoSize = true
             };
             subPanel.Controls.Add(lblRole);
@@ -181,37 +178,50 @@ namespace SCAIS
             ComboBox cmbRole = new ComboBox
             {
                 Name = "cmbRole",
-                Location = new Point(200, 300),
+                Location = new Point(200, 250),
                 Size = new Size(200, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             cmbRole.Items.AddRange(new string[] { "Advisor", "Student" });
             subPanel.Controls.Add(cmbRole);
+            Label lblSFirstName = new Label
+            {
+                Text = "Student First Name:",
+                Location = new Point(30, 300),
 
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblSFirstName);
+            
+           
+         
             // Add a button to confirm the add action
             Button btnConfirmAdd = new Button
             {
                 Text = "Confirm Add",
-                Location = new Point(30, 350),
+                Location = new Point(30, subPanel.Height - 60),
+                BackColor = Color.FromArgb(52, 152, 219),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
-
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
             };
             btnConfirmAdd.Click += (s, args) =>
             {
                 string userEmail = txtUserEmail.Text;
-                string userName = txtUserName.Text;
+                
                 string password = txtPassword.Text;
                 string role = cmbRole.SelectedItem?.ToString();
 
-                if (string.IsNullOrWhiteSpace(userEmail) || string.IsNullOrWhiteSpace(userName) ||
+                if (string.IsNullOrWhiteSpace(userEmail) ||
                     string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(role))
                 {
                     MessageBox.Show("All fields are required. Please fill in all the details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    MessageBox.Show($"User added successfully!\nEmail: {userEmail}\nName: {userName}\nRole: {role}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"User added successfully!\nEmail: {userEmail}\nRole: {role}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     // Add logic to save the user details
                 }
             };
@@ -221,15 +231,59 @@ namespace SCAIS
             Button btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(160, 350),
+                Location = new Point(250, subPanel.Height - 60),
+                BackColor = Color.FromArgb(231, 76, 60),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
             };
             btnCancel.Click += (s, args) =>
             {
                 subPanel.Controls.Clear();
             };
             subPanel.Controls.Add(btnCancel);
+        }
+        private void LoadUser(ComboBox cm)
+        {
+            try {
+                DataTable df = administrator.GetUserForDropdown();
+                cm.ValueMember = "user_id";
+                cm.DataSource = df;
+            } catch (Exception ex)
+            {
+                MessageBox.Show("Error loading users: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        /// Load courses into a ComboBox
+        private void LoadCourse(ComboBox cm)
+        {
+            try
+            {
+                DataTable df = administrator.GetCourseForDropdown();
+                cm.ValueMember = "course_id";
+                cm.DataSource = df;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading course: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        // Load Courses for select Prerequisites and Corequisites
+        private void LoadCourseInfo(DataGridView cm)
+        {
+            try
+            {
+                DataTable df = administrator.GetCourseForDropdown();
+                
+                cm.DataSource = df;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading course: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         private void btnEdit_Click(object sender, EventArgs e)
         {
@@ -259,64 +313,70 @@ namespace SCAIS
             };
             // Populate the dropdown with user IDs
             subPanel.Controls.Add(cmbUserID);
-
-            // Add a label for the user name input
-            Label lblUserName = new Label
-            {
-                Text = "User Name:",
-                Location = new Point(30, 200),
-                AutoSize = true
-            };
-            subPanel.Controls.Add(lblUserName);
-
-            // Add a textbox for the user name input
-            TextBox txtUserName = new TextBox
-            {
-                Name = "txtUserName",
-                Location = new Point(200, 200),
-                Size = new Size(200, 20)
-            };
-            subPanel.Controls.Add(txtUserName);
-
+            LoadUser(cmbUserID);
+            
             // Add a label for the user email input
-            Label lblUserEmail = new Label
+           Label lblUserEmail = new Label
             {
                 Text = "User Email:",
-                Location = new Point(30, 250),
+                Location = new Point(30, 200),
                 AutoSize = true
             };
             subPanel.Controls.Add(lblUserEmail);
 
-            // Add a textbox for the user email input
+            // Add a textbox for the user Email input
             TextBox txtUserEmail = new TextBox
+            {
+                Name = "txtUserEmail",
+                Location = new Point(200, 200),
+                Size = new Size(200, 20)
+            };
+            subPanel.Controls.Add(txtUserEmail);
+
+            // Add a label for the user Password input
+            Label lblUserPassword = new Label
+            {
+                Text = "User Password:",
+                Location = new Point(30, 250),
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblUserPassword);
+
+            // Add a textbox for the user password input
+            TextBox txtUserPassword = new TextBox
             {
                 Name = "txtUserEmail",
                 Location = new Point(200, 250),
                 Size = new Size(200, 20)
             };
-            subPanel.Controls.Add(txtUserEmail);
+            subPanel.Controls.Add(txtUserPassword);
 
             // Add a button to confirm the edit action
             Button btnConfirmEdit = new Button
             {
                 Text = "Confirm Edit",
-                Location = new Point(30, 300),
+                Location = new Point(30, subPanel.Height - 60),
+                BackColor = Color.FromArgb(52, 152, 219),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
+
             };
             btnConfirmEdit.Click += (s, args) =>
             {
                 string selectedUserID = cmbUserID.SelectedItem?.ToString();
-                string userName = txtUserName.Text;
                 string userEmail = txtUserEmail.Text;
 
-                if (string.IsNullOrWhiteSpace(selectedUserID) || string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(userEmail))
+                if (string.IsNullOrWhiteSpace(selectedUserID)  || string.IsNullOrWhiteSpace(userEmail))
                 {
                     MessageBox.Show("All fields are required. Please fill in all the details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    MessageBox.Show($"User with ID {selectedUserID} updated successfully!\nName: {userName}\nEmail: {userEmail}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"User with ID {selectedUserID} updated successfully!\nEmail: {userEmail}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     // Add logic to update the user details
                 }
             };
@@ -326,9 +386,14 @@ namespace SCAIS
             Button btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(160, 300),
+                Location = new Point(250, subPanel.Height - 60),
+                BackColor = Color.FromArgb(231, 76, 60),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
             };
             btnCancel.Click += (s, args) =>
             {
@@ -365,27 +430,57 @@ namespace SCAIS
             // Populate the dropdown with user IDs
             
             subPanel.Controls.Add(cmbUserID);
-
+            LoadUser(cmbUserID);
+            
             // Add a button to confirm the delete action
             Button btnConfirmDelete = new Button
             {
                 Text = "Confirm Delete",
-                Location = new Point(30, 200),
+                Location = new Point(30, subPanel.Height - 60),
+                BackColor = Color.FromArgb(52, 152, 219),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
+
             };
             btnConfirmDelete.Click += (s, args) =>
             {
-                string selectedUserID = cmbUserID.SelectedItem?.ToString();
 
-                if (string.IsNullOrWhiteSpace(selectedUserID))
+                int selectedUserID = Convert.ToInt32(cmbUserID.SelectedValue);
+
+                if (selectedUserID == -1)
                 {
                     MessageBox.Show("Please select a user ID to delete.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    MessageBox.Show($"User with ID {selectedUserID} deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // Add logic to delete the user
+                    DialogResult dg = MessageBox.Show($"Are you sure you want to delete user with id: {selectedUserID}?", "Conform Delete", MessageBoxButtons.YesNo);
+                    // Delete user
+                    if (dg == DialogResult.Yes)
+                    {
+                        try
+                        {
+                            bool isDelete = administrator.DeleteUser(selectedUserID);
+                            if (isDelete)
+                            {
+                                MessageBox.Show("User Deleued Successfully!  ");
+                            }
+                            else
+                            {
+                                MessageBox.Show("Error");
+                            }    
+                        } catch (SqlException ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        } catch (Exception e)
+                        {
+
+                            MessageBox.Show(e.Message);
+                        }
+                        }
                 }
             };
             subPanel.Controls.Add(btnConfirmDelete);
@@ -394,9 +489,15 @@ namespace SCAIS
             Button btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(160, 200),
+                Location = new Point(250, subPanel.Height - 60),
+                BackColor = Color.FromArgb(231, 76, 60),
+                ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
+
             };
             btnCancel.Click += (s, args) =>
             {
@@ -424,21 +525,209 @@ namespace SCAIS
             panelContent.Controls.Add(lblTitle);
             Button btnAddCourse = new Button
             {
-                Text = "Add Course",
+                Text = "Add New Course",
                 Location = new Point(30, 100),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Size = new Size(135, 30)
             };
             btnAddCourse.Click += new System.EventHandler(this.btnAddCourse_Click);
             panelContent.Controls.Add(btnAddCourse);
-            Button btnUpdateCatalog = new Button
+            Button btnUpdatePre = new Button
             {
-                Text = "Update Catalog",
-                Location = new Point(160, 100),
+                Text = "Update Prerequisites",
+                Location = new Point(185,100),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 30)
+                Size = new Size(135,30)
             };
-            panelContent.Controls.Add(btnUpdateCatalog);
+            btnUpdatePre.Click += (s, args) =>
+            {
+                panelContent.Controls.Add(subPanel);
+                subPanel.Controls.Clear();
+                // Implementation for updating prerequisites
+                Label lblCourseId = new Label
+                {
+                    Text = "Required Course ID for Update: ",
+                    Location = new Point(30, 150),
+                    AutoSize = true
+                };
+                subPanel.Controls.Add(lblCourseId);
+                ComboBox cmbCourseId = new ComboBox
+                {
+                    Name = "cmbCourseId",
+                    Location = new Point(250, 150),
+                    Size = new Size(200, 20),
+                    DropDownStyle = ComboBoxStyle.DropDownList
+                };
+                // Populate cmbCourseId with course IDs from the database
+                subPanel.Controls.Add(cmbCourseId);
+                LoadCourse(cmbCourseId);
+                Label lblPrereqIds = new Label
+                {
+                    Text = "New Prerequisite Course IDs : ",
+                    Location = new Point(30, 200),
+                    AutoSize = true
+                };
+                subPanel.Controls.Add(lblPrereqIds);
+                DataGridView txtPrereqIds = new DataGridView
+                {
+                    Name = "txtPrereqIds",
+                    Location = new Point(30, 250),
+                    Size = new Size(subPanel.Width - 100, subPanel.Height - 400),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                    AllowUserToAddRows = false,
+                    ReadOnly = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    BackgroundColor = Color.White,
+                    BorderStyle = BorderStyle.None,
+                    RowHeadersVisible = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false
+
+                };
+                DataGridViewCheckBoxColumn CheckBoxColumn = new DataGridViewCheckBoxColumn
+                {
+                    HeaderText = "Select",
+                    Width = 50,
+                    ReadOnly = false,
+                    Name = "checkBoxColumn"
+                };
+                txtPrereqIds.Columns.Insert(0, CheckBoxColumn);
+                LoadCourseInfo(txtPrereqIds);
+                subPanel.Controls.Add(txtPrereqIds);
+                Button btnConfirmUpdatePrereq = new Button
+                {
+                    Text = "Confirm Update",
+                    Location = new Point(30, subPanel.Height - 60),
+                    BackColor = Color.FromArgb(52, 152, 219),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                    Cursor = Cursors.Hand,
+                    Size = new Size(200, 45)
+                };
+                btnConfirmUpdatePrereq.Click += (sender2, args2) =>
+                {
+                    string selectedCourseId = cmbCourseId.SelectedItem?.ToString();
+                    string prereqIdsInput = txtPrereqIds.Text;
+                    if (string.IsNullOrWhiteSpace(selectedCourseId) || string.IsNullOrWhiteSpace(prereqIdsInput))
+                    {
+                        MessageBox.Show("All fields are required. Please fill in all the details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Prerequisites for Course ID {selectedCourseId} updated successfully to: {prereqIdsInput}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Add logic to update the prerequisites in the database
+                 
+                    }
+                };
+                subPanel.Controls.Add(btnConfirmUpdatePrereq);
+                Button btnCancel = new Button
+                    {
+                        Text = "Cancel",
+                        Location = new Point(250, subPanel.Height - 60),
+                        BackColor = Color.FromArgb(231, 76, 60),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                        Cursor = Cursors.Hand,
+                        Size = new Size(200, 45)
+                    };
+                    btnCancel.Click += (s3, args3) =>
+                    {
+                        subPanel.Controls.Clear();
+                    };
+                    subPanel.Controls.Add(btnCancel);
+              
+              
+            };  
+            panelContent.Controls.Add(btnUpdatePre);
+            Button btnUpdateCore = new Button
+            {
+                Text = "Update Corerequisites:",
+                Location = new Point(340, 100),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(135, 30)
+            };
+            btnUpdateCore.Click += (s, args) =>
+            {
+                panelContent.Controls.Add(subPanel);
+                subPanel.Controls.Clear();
+                // Implementation for updating corequisites
+                Label lblCourseId = new Label
+                {
+                    Text = "Required Course ID for Update: ",
+                    Location = new Point(30, 150),
+                    AutoSize = true
+                };
+                subPanel.Controls.Add(lblCourseId);
+               ComboBox cmbCourseIds = new ComboBox
+                {
+                    Name = "cmbCourseId",
+                    Location = new Point(250, 150),
+                    Size = new Size(200, 20),
+                    DropDownStyle = ComboBoxStyle.DropDownList
+                };
+                // Populate cmbCourseId with course IDs from the database
+                subPanel.Controls.Add(cmbCourseIds);
+                LoadCourse(cmbCourseIds);
+                Label lblCoreqIds = new Label
+                {
+                    Text = "New Corequisite Course IDs : ",
+                    Location = new Point(30, 200),
+                    AutoSize = true
+                };
+                subPanel.Controls.Add(lblCoreqIds);
+               CheckedListBox txtCoreqIds = new CheckedListBox
+               {
+                    Name = "txtCoreqIds",
+                    Location = new Point(250, 200),
+                    Size = new Size(200, 20),
+                };
+                subPanel.Controls.Add(txtCoreqIds);
+                Button btnConfirmUpdateCoreq = new Button
+                {
+                    Text = "Confirm Update",
+                    Location = new Point(30, subPanel.Height - 60),
+                    BackColor = Color.FromArgb(52, 152, 219),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                    Cursor = Cursors.Hand,
+                    Size = new Size(200, 45)
+                };
+                btnConfirmUpdateCoreq.Click += (sender2, args2) =>
+                {
+                    string selectedCourseId = cmbCourseIds.SelectedItem?.ToString();
+                    string coreqIdsInput = txtCoreqIds.Text;
+                    if (string.IsNullOrWhiteSpace(selectedCourseId) || string.IsNullOrWhiteSpace(coreqIdsInput))
+                    {
+                        MessageBox.Show("All fields are required. Please fill in all the details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Corequisites for Course ID {selectedCourseId} updated successfully to: {coreqIdsInput}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Add logic to update the corequisites in the database
+                    }
+                };
+                subPanel.Controls.Add(btnConfirmUpdateCoreq);
+                Button btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    Location = new Point(250, subPanel.Height - 60),
+                    BackColor = Color.FromArgb(231, 76, 60),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                    Cursor = Cursors.Hand,
+                    Size = new Size(200, 45)
+                };
+                btnCancel.Click += (s3, args3) =>
+                {
+                    subPanel.Controls.Clear();
+                };
+                subPanel.Controls.Add(btnCancel);
+            };
+            panelContent.Controls.Add(btnUpdateCore);
         }
 
         private void btnAddCourse_Click(object sender, EventArgs e)
@@ -450,27 +739,152 @@ namespace SCAIS
             panelContent.Controls.Add(subPanel);
             subPanel.Controls.Clear();
             // Implementation for adding course 
-            Label lblCourceName = new Label
+            Label lblCourseCode = new Label
             {
-                Text = "Course Name: ",
+                Text = "Course Code: ",
                 Location = new Point(30, 150),
                 AutoSize = true
             };
-            subPanel.Controls.Add(lblCourceName);
+            subPanel.Controls.Add(lblCourseCode);
+            TextBox txtCourceCode = new TextBox
+            {
+                Name = "txtCourceCode",
+                Location = new Point(200, 150),
+                Size = new Size(200, 20)
+            };
+            subPanel.Controls.Add(txtCourceCode);
+            Label lblCourseName = new Label
+            {
+                Text = "Course Name: ",
+                Location = new Point(30, 200),
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblCourseName);
             TextBox txtCourceName = new TextBox
             {
                 Name = "txtCourceName",
-                Location = new Point(200, 150),
+                Location = new Point(200, 200),
                 Size = new Size(200, 20)
             };
             subPanel.Controls.Add(txtCourceName);
             Label lblCourseType = new Label
             {
                 Text = "Course Type: ",
-                Location = new Point(30, 200),
+                Location = new Point(30, 250),
                 AutoSize = true
             };
             subPanel.Controls.Add(lblCourseType);
+            ComboBox cmbCourseType = new ComboBox
+            {
+                Name = "cmbCourseType",
+                Location = new Point(200, 250),
+                Size = new Size(200, 20),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbCourseType.Items.AddRange(new string[] { "Core", "Elective" ,"NRQ"});
+            subPanel.Controls.Add(cmbCourseType);
+            Label lblCredits = new Label
+            {
+                Text = "Credit Hours: ",
+                Location = new Point(30, 300),
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblCredits);
+            TextBox txtCredits = new TextBox
+            {
+                Name = "txtCredits",
+                Location = new Point(200, 300),
+                Size = new Size(200, 20)
+            };
+            subPanel.Controls.Add(txtCredits);
+            Label lblDescripitioh = new Label
+            {
+                Text = "Course Description: ",
+                Location = new Point(30, 350),
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblDescripitioh);
+            TextBox txtDescription = new TextBox
+            {
+                Name = "txtDescription",
+                Location = new Point(200, 350),
+                Size = new Size(200, 60),
+                Multiline = true
+            };
+            subPanel.Controls.Add(txtDescription);
+            Label lblSpID = new Label
+            {
+                Text = "Specialization ID: ",
+                Location = new Point(30, 430),
+                AutoSize = true
+            };
+            subPanel.Controls.Add(lblSpID);
+            TextBox txtSpID = new TextBox
+            {
+                Name = "txtSpID",
+                Location = new Point(200, 430),
+                Size = new Size(200, 20)
+            };
+            subPanel.Controls.Add(txtSpID);
+            Button btnConfirmAddCourse = new Button
+            {
+                Text = "Confirm Add Course",
+                Location = new Point(30, subPanel.Height - 60),
+                BackColor = Color.FromArgb(52, 152, 219),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+            };
+            btnConfirmAddCourse.Click += (s, args) =>
+            {
+                string courseCode = txtCourceCode.Text;
+                string courseName = txtCourceName.Text;
+                string courseType = cmbCourseType.SelectedItem?.ToString();
+                int credits;
+                string description = txtDescription.Text;
+                if (string.IsNullOrWhiteSpace(courseCode) || string.IsNullOrWhiteSpace(courseName) ||
+                    string.IsNullOrWhiteSpace(courseType) || string.IsNullOrWhiteSpace(txtCredits.Text) ||
+                    string.IsNullOrWhiteSpace(description))
+                {
+                    MessageBox.Show("All fields are required. Please fill in all the details.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                } else if (!int.TryParse(txtCredits.Text, out credits))
+                {
+                    MessageBox.Show("Credits must be a valid integer.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    credits = int.Parse(txtCredits.Text);
+                    MessageBox.Show($"Course added successfully!\nCourse Code: {courseCode}\nCourse Name: {courseName}\nCourse Type: {courseType}\nCredits: {credits}\nDescription: {description}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Insert to database
+                    administrator.AddCourse(courseCode, courseName, courseType, credits, description);
+                }
+            };
+            subPanel.Controls.Add(btnConfirmAddCourse);
+            Button btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(250, subPanel.Height - 60),
+                BackColor = Color.FromArgb(231, 76, 60),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Size = new Size(200, 45)
+
+
+            };
+            btnCancel.Click += (s, args) =>
+            {
+                subPanel.Controls.Clear();
+            };
+            subPanel.Controls.Add(btnCancel);
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

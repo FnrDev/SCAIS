@@ -6,10 +6,14 @@
 //  Original author: ahmed-pc
 ///////////////////////////////////////////////////////////
 
+using SCAIS;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Data;
+using System.Data.SqlClient;
 using System.IO;
+using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 
 
@@ -17,18 +21,23 @@ public class Administrator : User {
 
 	private int adminId;
 	private string department;
+    private String email;
+    public Administrator(){
 
-	public Administrator(){
+	}
+    public Administrator(int adminId, string email)
+    {
+        this.adminId = adminId;
+        this.email = email;
+    }
+
+    ~Administrator(){
 
 	}
 
-	~Administrator(){
+	//public void AddUpdateCourse(){
 
-	}
-
-	public void AddUpdateCourse(){
-
-	}
+	//}
 
 	public void AssignAdviseesToAdviser(){
 
@@ -43,6 +52,7 @@ public class Administrator : User {
 		return false;
 	}
 
+
 	public void Logout(){
 
 	}
@@ -54,9 +64,100 @@ public class Administrator : User {
 	public void ManageUserAccounts(){
 
 	}
+    public DataTable GetUserForDropdown()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
 
-	public void UpdateProfile(){
+            string query = @"SELECT user_id FROM Users";
 
-	}
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading users: {ex.Message}");
+        }
+    }
+
+    // Get Course 
+    public DataTable GetCourseForDropdown()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT course_id, course_code, course_name FROM courses";
+
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading users: {ex.Message}");
+        }
+    }
+    public bool DeleteUser(int user_id)
+    {
+                try
+        {
+            string query = @"DELETE FROM Users WHERE user_id = @user_id";
+            using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.Instance.GetConnection()))
+            //SqlConnection conn = dbConn.GetConnection() ))
+            {
+                DatabaseConnection.Instance.Open();
+                //SqlConnection conn = dbConn.GetConnection();
+                cmd.Parameters.AddWithValue("@user_id", user_id);
+                
+               int rowAffected = cmd.ExecuteNonQuery();
+                return rowAffected > 0;
+                
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error deleting user: {ex.Message}");
+        }
+    }
+
+    public void AddCourse(String code, String name, String type, int credit, String description) {
+        try
+        {
+            String insertCourse = "INSERT INTO Courses (course_code, Course_name, course_type, credit_hours, description) " +
+                           "VALUES (@CourseCode, @CourseName, @CourseType, @Credits, @Description)";
+            using (SqlCommand cmd = new SqlCommand(insertCourse, DatabaseConnection.Instance.GetConnection()))
+            {
+                DatabaseConnection.Instance.Open();
+                cmd.Parameters.AddWithValue("@CourseCode", code);
+                cmd.Parameters.AddWithValue("@CourseName", name);
+                cmd.Parameters.AddWithValue("@CourseType", type);
+                cmd.Parameters.AddWithValue("@Credits", credit);
+                cmd.Parameters.AddWithValue("@Description", description);
+
+            }
+        } catch (Exception ex)
+        {
+            throw new Exception($"Error adding course: {ex.Message}");
+        }
+        DatabaseConnection.Instance.Close();
+    }
+    // public void UpdateProfile(){
+
+    //}
 
 }//end Administrator

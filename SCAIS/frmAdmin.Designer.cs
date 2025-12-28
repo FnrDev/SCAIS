@@ -34,23 +34,25 @@ namespace SCAIS
             this.lblTitle = new System.Windows.Forms.Label();
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelContent = new System.Windows.Forms.Panel();
-            this.panel1 = new System.Windows.Forms.Panel();
+            this.subPanel = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
+            this.panelSidebar = new System.Windows.Forms.Panel();
             this.button5 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.btnCourceCatalog = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.btnUserManagement = new System.Windows.Forms.Button();
-            this.subPanel = new System.Windows.Forms.Panel();
             this.panelHeader.SuspendLayout();
             this.panelMain.SuspendLayout();
             this.panelContent.SuspendLayout();
-            this.panel1.SuspendLayout();
+            this.subPanel.SuspendLayout();
+            this.panelSidebar.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelHeader
             // 
-            this.panelHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(89)))), ((int)(((byte)(182)))));
+            this.panelHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
             this.panelHeader.Controls.Add(this.lblWelcome);
             this.panelHeader.Controls.Add(this.btnLogout);
             this.panelHeader.Controls.Add(this.lblTitle);
@@ -91,6 +93,7 @@ namespace SCAIS
             // 
             // lblTitle
             // 
+            this.lblTitle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
             this.lblTitle.Font = new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(27, 25);
@@ -105,7 +108,7 @@ namespace SCAIS
             // 
             this.panelMain.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(236)))), ((int)(((byte)(240)))), ((int)(((byte)(241)))));
             this.panelMain.Controls.Add(this.panelContent);
-            this.panelMain.Controls.Add(this.panel1);
+            this.panelMain.Controls.Add(this.panelSidebar);
             this.panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelMain.Location = new System.Drawing.Point(0, 123);
             this.panelMain.Margin = new System.Windows.Forms.Padding(4);
@@ -124,25 +127,45 @@ namespace SCAIS
             this.panelContent.Size = new System.Drawing.Size(1000, 615);
             this.panelContent.TabIndex = 2;
             // 
-            // panel1
+            // subPanel
             // 
-            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(70)))), ((int)(((byte)(70)))), ((int)(((byte)(70)))));
-            this.panel1.Controls.Add(this.button5);
-            this.panel1.Controls.Add(this.button4);
-            this.panel1.Controls.Add(this.button3);
-            this.panel1.Controls.Add(this.btnCourceCatalog);
-            this.panel1.Controls.Add(this.button2);
-            this.panel1.Controls.Add(this.btnUserManagement);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(4);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(333, 615);
-            this.panel1.TabIndex = 1;
+            this.subPanel.Controls.Add(this.label1);
+            this.subPanel.Location = new System.Drawing.Point(0, 0);
+            this.subPanel.Name = "subPanel";
+            this.subPanel.Size = new System.Drawing.Size(1000, 815);
+            this.subPanel.TabIndex = 0;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Segoe UI", 16.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(44)))), ((int)(((byte)(62)))), ((int)(((byte)(80)))));
+            this.label1.Location = new System.Drawing.Point(40, 37);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(420, 38);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Welcome to Admin Dashboard";
+            // 
+            // panelSidebar
+            // 
+            this.panelSidebar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(44)))), ((int)(((byte)(52)))), ((int)(((byte)(80)))));
+            this.panelSidebar.Controls.Add(this.button5);
+            this.panelSidebar.Controls.Add(this.button4);
+            this.panelSidebar.Controls.Add(this.button3);
+            this.panelSidebar.Controls.Add(this.btnCourceCatalog);
+            this.panelSidebar.Controls.Add(this.button2);
+            this.panelSidebar.Controls.Add(this.btnUserManagement);
+            this.panelSidebar.Dock = System.Windows.Forms.DockStyle.Left;
+            this.panelSidebar.Location = new System.Drawing.Point(0, 0);
+            this.panelSidebar.Margin = new System.Windows.Forms.Padding(4);
+            this.panelSidebar.Name = "panelSidebar";
+            this.panelSidebar.Size = new System.Drawing.Size(333, 615);
+            this.panelSidebar.TabIndex = 1;
             // 
             // button5
             // 
-            this.button5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(88)))), ((int)(((byte)(92)))), ((int)(((byte)(100)))));
+            this.button5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.button5.Cursor = System.Windows.Forms.Cursors.Hand;
             this.button5.FlatAppearance.BorderSize = 0;
             this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -158,10 +181,11 @@ namespace SCAIS
             this.button5.Text = "> Specialization Management";
             this.button5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.button5.UseVisualStyleBackColor = false;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // button4
             // 
-            this.button4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(88)))), ((int)(((byte)(92)))), ((int)(((byte)(100)))));
+            this.button4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.button4.Cursor = System.Windows.Forms.Cursors.Hand;
             this.button4.FlatAppearance.BorderSize = 0;
             this.button4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -180,7 +204,7 @@ namespace SCAIS
             // 
             // button3
             // 
-            this.button3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(88)))), ((int)(((byte)(92)))), ((int)(((byte)(100)))));
+            this.button3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.button3.Cursor = System.Windows.Forms.Cursors.Hand;
             this.button3.FlatAppearance.BorderSize = 0;
             this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -199,7 +223,7 @@ namespace SCAIS
             // 
             // btnCourceCatalog
             // 
-            this.btnCourceCatalog.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(88)))), ((int)(((byte)(92)))), ((int)(((byte)(100)))));
+            this.btnCourceCatalog.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.btnCourceCatalog.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnCourceCatalog.FlatAppearance.BorderSize = 0;
             this.btnCourceCatalog.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -234,7 +258,7 @@ namespace SCAIS
             // 
             // btnUserManagement
             // 
-            this.btnUserManagement.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(88)))), ((int)(((byte)(92)))), ((int)(((byte)(100)))));
+            this.btnUserManagement.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.btnUserManagement.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnUserManagement.FlatAppearance.BorderSize = 0;
             this.btnUserManagement.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -252,13 +276,6 @@ namespace SCAIS
             this.btnUserManagement.UseVisualStyleBackColor = false;
             this.btnUserManagement.Click += new System.EventHandler(this.btnUserManagement_Click);
             // 
-            // subPanel
-            // 
-            this.subPanel.Location = new System.Drawing.Point(0, 0);
-            this.subPanel.Name = "subPanel";
-            this.subPanel.Size = new System.Drawing.Size(1000, 615);
-            this.subPanel.TabIndex = 0;
-            // 
             // frmAdmin
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -275,7 +292,9 @@ namespace SCAIS
             this.panelHeader.PerformLayout();
             this.panelMain.ResumeLayout(false);
             this.panelContent.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
+            this.subPanel.ResumeLayout(false);
+            this.subPanel.PerformLayout();
+            this.panelSidebar.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -287,7 +306,7 @@ namespace SCAIS
         private System.Windows.Forms.Button btnLogout;
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.Label lblWelcome;
-        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel panelSidebar;
         private System.Windows.Forms.Button btnUserManagement;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button btnCourceCatalog;
@@ -296,5 +315,6 @@ namespace SCAIS
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.Panel panelContent;
         private System.Windows.Forms.Panel subPanel;
+        private System.Windows.Forms.Label label1;
     }
 }
