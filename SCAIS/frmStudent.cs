@@ -81,6 +81,7 @@ namespace SCAIS
         private void btnSubmitPreferences_Click(object sender, EventArgs e) => LoadSubmitPreferences();
         private void btnApprovedCourses_Click(object sender, EventArgs e) => LoadApprovedCourses();
 
+        private void btnLogoutSide_Click(object sender, EventArgs e) => Logout();
         private void btnLogout_Click(object sender, EventArgs e) => Logout();
 
         private void Logout()
@@ -573,6 +574,13 @@ namespace SCAIS
             SetActiveButton(btnApprovedCourses);
 
             LoadApprovedCourses();
+        }
+
+        private void btnLogoutSide_Click_1(object sender, EventArgs e)
+        {
+            SetActiveButton(btnLogoutSide);
+
+            Logout();
         }
 
   

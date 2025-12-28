@@ -24,6 +24,7 @@ public class User {
 	private string username;
 
 	public User(){
+		
 
 	}
 

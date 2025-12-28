@@ -436,8 +436,8 @@ public class Adviser : User
 		}
 	}
 
-	public void UpdateProfile()
-	{
-	}
+//	public void UpdateProfile()
+//	{
+	//}
 
 }//end Adviser
