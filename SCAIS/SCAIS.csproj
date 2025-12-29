@@ -155,12 +155,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CheckLastLogin.sql" />
-    <Content Include="SCAISDB.mdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="DATABASE_FIX_INSTRUCTIONS.txt" />
+    <Content Include="QUICK_SETUP_CHECKLIST.txt" />
+    <Content Include="SCAISDB.mdf" />
     <Content Include="SCAISDB_log.ldf">
       <DependentUpon>SCAISDB.mdf</DependentUpon>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>

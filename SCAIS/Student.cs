@@ -80,12 +80,19 @@ public class Student : User
             SqlConnection conn = dbConn.GetConnection();
 
             string query = @"SELECT c.course_code, c.course_name, c.credit_hours,
-                            e.grade, e.status, sem.semester_name + ' ' + sem.academic_year AS semester
+                            ISNULL(e.grade, 'N/A') AS grade, 
+                            CASE 
+                                WHEN e.approval_status = 'PendingApproval' THEN 'Pending Approval'
+                                WHEN e.approval_status = 'Approved' AND e.status = 'Pending' THEN 'Approved - Not Started'
+                                ELSE ISNULL(e.status, 'Pending')
+                            END AS status,
+                            sem.semester_name + ' ' + sem.academic_year AS semester
                             FROM enrollments e
                             INNER JOIN courses c ON e.course_id = c.course_id
                             INNER JOIN semesters sem ON e.semester_id = sem.semester_id
                             WHERE e.student_id = @studentId
-                            ORDER BY sem.start_date DESC";
+                            AND e.approval_status IN ('Approved', 'Rejected', 'PendingApproval')
+                            ORDER BY sem.start_date DESC, e.enrollment_date DESC";
 
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {

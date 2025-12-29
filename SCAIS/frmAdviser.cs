@@ -128,7 +128,7 @@ namespace SCAIS
             
             Label lblInstruction = new Label
             {
-                Text = "Select a student to view their academic history and specialization:",
+                Text = "Select a student to view their academic history:",
                 Font = new Font("Segoe UI", 10),
                 Location = new Point(30, 70),
                 AutoSize = true
@@ -144,28 +144,154 @@ namespace SCAIS
             };
             panelContent.Controls.Add(cboStudents);
             
+            // Student Info Panel
+            Panel pnlStudentInfo = new Panel
+            {
+                Location = new Point(30, 140),
+                Size = new Size(850, 120),
+                BackColor = Color.FromArgb(236, 240, 241),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            panelContent.Controls.Add(pnlStudentInfo);
+            
             DataGridView dgvHistory = new DataGridView
             {
-                Location = new Point(30, 150),
-                Size = new Size(850, 380),
+                Location = new Point(30, 270),
+                Size = new Size(850, 260),
                 AllowUserToAddRows = false,
                 ReadOnly = true,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None
+                BorderStyle = BorderStyle.None,
+                RowHeadersVisible = false
             };
             panelContent.Controls.Add(dgvHistory);
             
-            LoadStudentsComboBox(cboStudents);
-            
+            // Attach event handler FIRST
             cboStudents.SelectedIndexChanged += (s, ev) =>
             {
-                if (cboStudents.SelectedValue != null)
+                if (cboStudents.SelectedValue != null && cboStudents.SelectedIndex >= 0)
                 {
-                    int studentId = Convert.ToInt32(cboStudents.SelectedValue);
-                    LoadStudentAcademicHistory(studentId, dgvHistory);
+                    try
+                    {
+                        int studentId = Convert.ToInt32(cboStudents.SelectedValue);
+                        LoadStudentInfo(studentId, pnlStudentInfo);
+                        LoadStudentAcademicHistory(studentId, dgvHistory);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error loading student data: {ex.Message}", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             };
+            
+            // Load students into dropdown
+            LoadStudentsComboBox(cboStudents);
+            
+            // Auto-select first student AFTER everything is set up
+            if (cboStudents.Items.Count > 0)
+            {
+                cboStudents.SelectedIndex = 0;
+            }
+            else
+            {
+                Label lblNoStudents = new Label
+                {
+                    Text = "No students assigned to you yet.",
+                    Location = new Point(30, 150),
+                    AutoSize = true,
+                    Font = new Font("Segoe UI", 10),
+                    ForeColor = Color.Gray
+                };
+                panelContent.Controls.Add(lblNoStudents);
+            }
+        }
+
+        private void LoadStudentInfo(int studentId, Panel panel)
+        {
+            panel.Controls.Clear();
+            
+            try
+            {
+                DataTable dt = adviser.GetStudentInfo(studentId);
+                
+                if (dt.Rows.Count > 0)
+                {
+                    DataRow row = dt.Rows[0];
+                    
+                    // Column 1
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Student: {row["student_name"]}",
+                        Location = new Point(15, 10),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Student Number: {row["student_number"]}",
+                        Location = new Point(15, 35),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Email: {row["email"]}",
+                        Location = new Point(15, 55),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Specialization: {row["specialization_name"]}",
+                        Location = new Point(15, 75),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    // Column 2
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Current Semester: {row["current_semester"]}",
+                        Location = new Point(350, 10),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"GPA: {row["gpa"]}",
+                        Location = new Point(350, 35),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Completed Credits: {row["completed_credit_hours"]}",
+                        Location = new Point(350, 60),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                    
+                    panel.Controls.Add(new Label
+                    {
+                        Text = $"Enrollment Year: {row["enrollment_year"]}",
+                        Location = new Point(350, 85),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 9)
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading student info: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void LoadStudentsComboBox(ComboBox combo)
@@ -173,9 +299,17 @@ namespace SCAIS
             try
             {
                 DataTable dt = adviser.GetAdviseesForDropdown();
-                combo.DisplayMember = "display_name";
-                combo.ValueMember = "student_id";
-                combo.DataSource = dt;
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    combo.DisplayMember = "display_name";
+                    combo.ValueMember = "student_id";
+                    combo.DataSource = dt;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("No students found for this adviser");
+                }
             }
             catch (Exception ex)
             {
@@ -255,16 +389,44 @@ namespace SCAIS
             };
             panelContent.Controls.Add(dgvRecommendations);
             
-            LoadStudentsComboBox(cboStudents);
-            
+            // Attach event handler FIRST
             cboStudents.SelectedIndexChanged += (s, ev) =>
             {
-                if (cboStudents.SelectedValue != null)
+                if (cboStudents.SelectedValue != null && cboStudents.SelectedIndex >= 0)
                 {
-                    int studentId = Convert.ToInt32(cboStudents.SelectedValue);
-                    LoadEligibleCourses(studentId, dgvRecommendations);
+                    try
+                    {
+                        int studentId = Convert.ToInt32(cboStudents.SelectedValue);
+                        LoadEligibleCourses(studentId, dgvRecommendations);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error loading courses: {ex.Message}", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             };
+            
+            // Load students into dropdown
+            LoadStudentsComboBox(cboStudents);
+            
+            // Auto-select first student AFTER everything is set up
+            if (cboStudents.Items.Count > 0)
+            {
+                cboStudents.SelectedIndex = 0;
+            }
+            else
+            {
+                Label lblNoStudents = new Label
+                {
+                    Text = "No students assigned to you yet.",
+                    Location = new Point(30, 150),
+                    AutoSize = true,
+                    Font = new Font("Segoe UI", 10),
+                    ForeColor = Color.Gray
+                };
+                panelContent.Controls.Add(lblNoStudents);
+            }
         }
 
         private void LoadEligibleCourses(int studentId, DataGridView dgv)
@@ -319,20 +481,21 @@ namespace SCAIS
             DataGridView dgvPending = new DataGridView
             {
                 Location = new Point(30, 110),
-                Size = new Size(850, 350),
+                Size = new Size(850, 320),
                 AllowUserToAddRows = false,
                 ReadOnly = true,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor = Color.White,
                 BorderStyle = BorderStyle.None,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible = false
             };
             panelContent.Controls.Add(dgvPending);
             
             Button btnApprove = new Button
             {
                 Text = "Approve Selected",
-                Location = new Point(30, 380),
+                Location = new Point(30, 450),
                 Size = new Size(150, 40),
                 BackColor = Color.FromArgb(46, 204, 113),
                 ForeColor = Color.White,
@@ -340,12 +503,13 @@ namespace SCAIS
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
+            btnApprove.FlatAppearance.BorderSize = 0;
             panelContent.Controls.Add(btnApprove);
             
             Button btnReject = new Button
             {
                 Text = "Reject Selected",
-                Location = new Point(200, 380),
+                Location = new Point(200, 450),
                 Size = new Size(150, 40),
                 BackColor = Color.FromArgb(231, 76, 60),
                 ForeColor = Color.White,
@@ -353,6 +517,7 @@ namespace SCAIS
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
+            btnReject.FlatAppearance.BorderSize = 0;
             panelContent.Controls.Add(btnReject);
             
             LoadPendingEnrollments(dgvPending);
@@ -396,14 +561,97 @@ namespace SCAIS
             try
             {
                 int enrollmentId = Convert.ToInt32(dgv.SelectedRows[0].Cells["enrollment_id"].Value);
+                string studentName = dgv.SelectedRows[0].Cells["student_name"].Value.ToString();
+                string courseName = dgv.SelectedRows[0].Cells["course_name"].Value.ToString();
+                
+                string remarks = "";
+                
+                // Prompt for remarks
+                using (Form remarkForm = new Form())
+                {
+                    remarkForm.Text = $"{status} Enrollment";
+                    remarkForm.Size = new Size(500, 300);
+                    remarkForm.StartPosition = FormStartPosition.CenterParent;
+                    remarkForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    remarkForm.MaximizeBox = false;
+                    remarkForm.MinimizeBox = false;
+                    
+                    Label lblInfo = new Label
+                    {
+                        Text = $"Student: {studentName}\nCourse: {courseName}\n\n" +
+                               (status == "Rejected" ? "Please provide a reason for rejection:" : "Optional remarks:"),
+                        Location = new Point(20, 20),
+                        Size = new Size(440, 80),
+                        Font = new Font("Segoe UI", 10)
+                    };
+                    remarkForm.Controls.Add(lblInfo);
+                    
+                    TextBox txtRemarks = new TextBox
+                    {
+                        Location = new Point(20, 110),
+                        Size = new Size(440, 80),
+                        Multiline = true,
+                        ScrollBars = ScrollBars.Vertical,
+                        Font = new Font("Segoe UI", 10)
+                    };
+                    remarkForm.Controls.Add(txtRemarks);
+                    
+                    Button btnOK = new Button
+                    {
+                        Text = "OK",
+                        DialogResult = DialogResult.OK,
+                        Location = new Point(280, 210),
+                        Size = new Size(90, 35),
+                        BackColor = Color.FromArgb(52, 152, 219),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold)
+                    };
+                    btnOK.FlatAppearance.BorderSize = 0;
+                    remarkForm.Controls.Add(btnOK);
+                    
+                    Button btnCancel = new Button
+                    {
+                        Text = "Cancel",
+                        DialogResult = DialogResult.Cancel,
+                        Location = new Point(380, 210),
+                        Size = new Size(90, 35),
+                        BackColor = Color.FromArgb(189, 195, 199),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Font = new Font("Segoe UI", 10, FontStyle.Bold)
+                    };
+                    btnCancel.FlatAppearance.BorderSize = 0;
+                    remarkForm.Controls.Add(btnCancel);
+                    
+                    remarkForm.AcceptButton = btnOK;
+                    remarkForm.CancelButton = btnCancel;
+                    
+                    if (remarkForm.ShowDialog() == DialogResult.OK)
+                    {
+                        remarks = txtRemarks.Text.Trim();
+                        
+                        // For rejection, require remarks
+                        if (status == "Rejected" && string.IsNullOrWhiteSpace(remarks))
+                        {
+                            MessageBox.Show("Please provide a reason for rejection.", "Remarks Required", 
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        return; // User cancelled
+                    }
+                }
                 
                 if (status == "Approved")
                 {
-                    adviser.ApproveCoursePlan(enrollmentId);
+                    adviser.ApproveCoursePlan(enrollmentId, remarks);
                 }
                 else if (status == "Rejected")
                 {
-                    adviser.RejectCoursePlan(enrollmentId);
+                    adviser.RejectCoursePlan(enrollmentId, remarks);
                 }
                 
                 MessageBox.Show($"Enrollment {status.ToLower()} successfully.", "Success", 

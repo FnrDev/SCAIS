@@ -153,10 +153,18 @@ namespace SCAIS
             switch (role)
             {
                 case "Student":
-                    targetForm = new frmStudent(userId, email);
+                    int studentId = GetStudentId(userId);
+                    if (studentId == 0)
+                    {
+                        MessageBox.Show("Student record not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    targetForm = new frmStudent(studentId, email);
                     break;
                     
                 case "Adviser":
+                    // frmAdviser expects userId, not adviser_id
+                    // The Adviser class will look up the adviser_id from the userId
                     targetForm = new frmAdviser(userId, email);
                     break;
                     
@@ -178,6 +186,38 @@ namespace SCAIS
                 txtPassword.Clear();
                 txtEmail.Focus();
                 this.Show();
+            }
+        }
+
+        private int GetStudentId(int userId)
+        {
+            try
+            {
+                DatabaseConnection dbConn = DatabaseConnection.Instance;
+                SqlConnection conn = dbConn.GetConnection();
+                
+                string query = "SELECT student_id FROM students WHERE user_id = @userId";
+                
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    
+                    dbConn.Open();
+                    object result = cmd.ExecuteScalar();
+                    dbConn.Close();
+                    
+                    if (result != null && int.TryParse(result.ToString(), out int studentId))
+                    {
+                        return studentId;
+                    }
+                    
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting student_id: {ex.Message}");
+                return 0;
             }
         }
 

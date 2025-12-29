@@ -90,6 +90,13 @@ public class Adviser : User
 						facultyId = reader.IsDBNull(reader.GetOrdinal("faculty_id")) ? "" : reader.GetString(reader.GetOrdinal("faculty_id"));
 						department = reader.IsDBNull(reader.GetOrdinal("department")) ? "" : reader.GetString(reader.GetOrdinal("department"));
 						officeLocation = reader.IsDBNull(reader.GetOrdinal("office_location")) ? "" : reader.GetString(reader.GetOrdinal("office_location"));
+						
+						// Debug output
+						System.Diagnostics.Debug.WriteLine($"Adviser loaded - adviser_id: {adviserId}, user_id: {userId}");
+					}
+					else
+					{
+						System.Diagnostics.Debug.WriteLine($"No adviser found for user_id: {userId}");
 					}
 				}
 
@@ -146,12 +153,15 @@ public class Adviser : User
 			SqlConnection conn = dbConn.GetConnection();
 
 			string query = @"SELECT c.course_code, c.course_name, c.credit_hours,
-                            e.grade, e.status, sem.semester_name + ' ' + sem.academic_year AS semester
+                            ISNULL(e.grade, 'N/A') AS grade, 
+                            ISNULL(e.status, 'Pending') AS status, 
+                            sem.semester_name + ' ' + sem.academic_year AS semester
                             FROM enrollments e
                             INNER JOIN courses c ON e.course_id = c.course_id
                             INNER JOIN semesters sem ON e.semester_id = sem.semester_id
                             WHERE e.student_id = @studentId
-                            ORDER BY sem.start_date DESC";
+                            AND e.approval_status IN ('Approved', 'Rejected')
+                            ORDER BY sem.start_date DESC, e.enrollment_date DESC";
 
 			using (SqlCommand cmd = new SqlCommand(query, conn))
 			{
@@ -165,6 +175,45 @@ public class Adviser : User
 		catch (Exception ex)
 		{
 			throw new Exception($"Error loading academic history: {ex.Message}");
+		}
+	}
+
+	public DataTable GetStudentInfo(int studentId)
+	{
+		try
+		{
+			DatabaseConnection dbConn = DatabaseConnection.Instance;
+			SqlConnection conn = dbConn.GetConnection();
+
+			string query = @"SELECT 
+                            s.student_id,
+                            s.student_number,
+                            s.first_name + ' ' + s.last_name AS student_name,
+                            s.first_name,
+                            s.last_name,
+                            u.email,
+                            sp.specialization_name,
+                            s.current_semester,
+                            s.gpa,
+                            s.completed_credit_hours,
+                            s.enrollment_year
+                            FROM students s
+                            INNER JOIN users u ON s.user_id = u.user_id
+                            LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+                            WHERE s.student_id = @studentId";
+
+			using (SqlCommand cmd = new SqlCommand(query, conn))
+			{
+				cmd.Parameters.AddWithValue("@studentId", studentId);
+				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+				DataTable dt = new DataTable();
+				adapter.Fill(dt);
+				return dt;
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error loading student info: {ex.Message}");
 		}
 	}
 
@@ -243,6 +292,9 @@ public class Adviser : User
 			DatabaseConnection dbConn = DatabaseConnection.Instance;
 			SqlConnection conn = dbConn.GetConnection();
 
+			// Debug output
+			System.Diagnostics.Debug.WriteLine($"Getting pending approvals for adviser_id: {adviserId}");
+
 			string query = @"SELECT e.enrollment_id, s.first_name + ' ' + s.last_name AS student_name,
                             s.student_number, c.course_code, c.course_name, c.credit_hours,
                             sem.semester_name + ' ' + sem.academic_year AS semester,
@@ -261,6 +313,10 @@ public class Adviser : User
 				SqlDataAdapter adapter = new SqlDataAdapter(cmd);
 				DataTable dt = new DataTable();
 				adapter.Fill(dt);
+				
+				// Debug output
+				System.Diagnostics.Debug.WriteLine($"Found {dt.Rows.Count} pending enrollment(s)");
+				
 				return dt;
 			}
 		}
@@ -270,17 +326,17 @@ public class Adviser : User
 		}
 	}
 
-	public void ApproveCoursePlan(int enrollmentId)
+	public void ApproveCoursePlan(int enrollmentId, string remarks = "")
 	{
-		ProcessEnrollmentApproval(enrollmentId, "Approved");
+		ProcessEnrollmentApproval(enrollmentId, "Approved", remarks);
 	}
 
-	public void RejectCoursePlan(int enrollmentId)
+	public void RejectCoursePlan(int enrollmentId, string remarks = "")
 	{
-		ProcessEnrollmentApproval(enrollmentId, "Rejected");
+		ProcessEnrollmentApproval(enrollmentId, "Rejected", remarks);
 	}
 
-	private void ProcessEnrollmentApproval(int enrollmentId, string status)
+	private void ProcessEnrollmentApproval(int enrollmentId, string status, string remarks = "")
 	{
 		try
 		{
@@ -290,7 +346,8 @@ public class Adviser : User
 			string query = @"UPDATE enrollments 
                             SET approval_status = @status, 
                                 adviser_id = @adviserId,
-                                approval_date = @approvalDate
+                                approval_date = @approvalDate,
+                                adviser_remarks = @remarks
                             WHERE enrollment_id = @enrollmentId";
 
 			using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -298,6 +355,7 @@ public class Adviser : User
 				cmd.Parameters.AddWithValue("@status", status);
 				cmd.Parameters.AddWithValue("@adviserId", adviserId);
 				cmd.Parameters.AddWithValue("@approvalDate", DateTime.Now);
+				cmd.Parameters.AddWithValue("@remarks", string.IsNullOrWhiteSpace(remarks) ? (object)DBNull.Value : remarks);
 				cmd.Parameters.AddWithValue("@enrollmentId", enrollmentId);
 
 				dbConn.Open();

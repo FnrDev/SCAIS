@@ -167,38 +167,6 @@ namespace SCAIS
                         Font = new Font("Segoe UI", 10)
                     });
                 }
-
-                // Grid
-                var dgvHistory = new DataGridView
-                {
-                    Location = new Point(20, 170),
-                    Size = new Size(pnlContent.Width - 40, pnlContent.Height - 200),
-                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                    AllowUserToAddRows = false,
-                    ReadOnly = true,
-                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                    BackgroundColor = Color.White,
-                    BorderStyle = BorderStyle.None
-                };
-                pnlContent.Controls.Add(dgvHistory);
-
-                DataTable dtHistory = studentModel.GetAcademicHistory(studentId);
-                dgvHistory.DataSource = dtHistory;
-
-                if (dtHistory.Columns.Contains("course_code"))
-                {
-                    dgvHistory.Columns["course_code"].HeaderText = "Course Code";
-                    if (dgvHistory.Columns.Contains("course_name"))
-                        dgvHistory.Columns["course_name"].HeaderText = "Course Name";
-                    if (dgvHistory.Columns.Contains("credit_hours"))
-                        dgvHistory.Columns["credit_hours"].HeaderText = "Credits";
-                    if (dgvHistory.Columns.Contains("grade"))
-                        dgvHistory.Columns["grade"].HeaderText = "Grade";
-                    if (dgvHistory.Columns.Contains("status"))
-                        dgvHistory.Columns["status"].HeaderText = "Status";
-                    if (dgvHistory.Columns.Contains("semester"))
-                        dgvHistory.Columns["semester"].HeaderText = "Semester";
-                }
             }
             catch (Exception ex)
             {

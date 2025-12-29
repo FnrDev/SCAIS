@@ -11,9 +11,8 @@ namespace SCAIS
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Set DataDirectory to the executable's directory
-            // The database file should be in the same folder as the .exe
-            AppDomain.CurrentDomain.SetData("DataDirectory", Application.StartupPath);
+            // Database is now in the project root folder, not using DataDirectory
+            // All changes will persist in C:\Users\ahmed-pc\Documents\SCAIS\SCAIS\SCAISDB.mdf
 
             Application.Run(new login());
         }
