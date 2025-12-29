@@ -160,7 +160,7 @@
     </Content>
     <Content Include="SCAISDB_log.ldf">
       <DependentUpon>SCAISDB.mdf</DependentUpon>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>

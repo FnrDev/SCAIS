@@ -11,7 +11,8 @@ namespace SCAIS
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Resolve |DataDirectory| to the executable folder so AttachDbFilename=|DataDirectory|\SCAISDB.mdf uses your repo copy at runtime
+            // Set DataDirectory to the executable's directory
+            // The database file should be in the same folder as the .exe
             AppDomain.CurrentDomain.SetData("DataDirectory", Application.StartupPath);
 
             Application.Run(new login());
