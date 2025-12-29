@@ -13,57 +13,59 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Text;
+using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 
 
 public class Administrator : User {
 
-	private int adminId;
-	private string department;
+    private int adminId;
+    private string department;
     private String email;
-    public Administrator(){
+    public Administrator() {
 
-	}
+    }
     public Administrator(int adminId, string email)
     {
         this.adminId = adminId;
         this.email = email;
     }
 
-    ~Administrator(){
+    ~Administrator() {
 
-	}
+    }
 
-	//public void AddUpdateCourse(){
+    //public void AddUpdateCourse(){
 
-	//}
+    //}
 
-	public void AssignAdviseesToAdviser(){
+    public void AssignAdviseesToAdviser() {
 
-	}
+    }
 
-	public void DefineSemesterOfferings(){
+    public void DefineSemesterOfferings() {
 
-	}
+    }
 
-	public bool Login(){
+    public bool Login() {
 
-		return false;
-	}
+        return false;
+    }
 
 
-	public void Logout(){
+    public void Logout() {
 
-	}
+    }
 
-	public void MaintainSpecializations(){
+    public void MaintainSpecializations() {
 
-	}
+    }
 
-	public void ManageUserAccounts(){
+    public void ManageUserAccounts() {
 
-	}
+    }
+    // Get user info
     public DataTable GetUserForDropdown()
     {
         try
@@ -71,7 +73,7 @@ public class Administrator : User {
             DatabaseConnection dbConn = DatabaseConnection.Instance;
             SqlConnection conn = dbConn.GetConnection();
 
-            string query = @"SELECT user_id FROM Users";
+            string query = @"SELECT user_id, email, password, role FROM Users";
 
 
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -87,7 +89,130 @@ public class Administrator : User {
             throw new Exception($"Error loading users: {ex.Message}");
         }
     }
+    // Edit student 
+    public void EditStudent(int id, String email, String password, String FirstName, String LastName, String sno, int year)
+    {
+        DatabaseConnection dbConn = DatabaseConnection.Instance;
+        SqlConnection conn = dbConn.GetConnection();
+        String userQuery = "UPDATE users SET email = @email, password = @password where user_id = @id ";
+        using (SqlCommand cmd = new SqlCommand(userQuery, conn))
+        {
+            conn.Open();
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@password", password);
+            cmd.Parameters.AddWithValue("@id", id);
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("User updated successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update user.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+            }
+        }
 
+        String query = "UPDATE Students SET first_name = @fname, last_name = @lname, student_number = @snum, enrollment_year = @year" +
+            " where user_id = @id ";
+
+        using (SqlCommand cmd = new SqlCommand(query, conn))
+        {
+
+            cmd.Parameters.AddWithValue("@fname", FirstName);
+            cmd.Parameters.AddWithValue("@lname", LastName);
+            cmd.Parameters.AddWithValue("@snum", sno);
+            cmd.Parameters.AddWithValue("@year", year);
+            cmd.Parameters.AddWithValue("@id", id);
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Student updated successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update student.");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+
+            }
+            conn.Close();
+        }
+
+    }
+    // Edit Advisor
+    public void EditAdviser(int id, String email, String password, String faculty_id, String department)
+    {
+        DatabaseConnection dbConn = DatabaseConnection.Instance;
+        SqlConnection conn = dbConn.GetConnection();
+        String userQuery = "UPDATE users SET email = @email, password = @password where user_id = @id ";
+        using (SqlCommand cmd = new SqlCommand(userQuery, conn))
+        {
+            conn.Open();
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@password", password);
+            cmd.Parameters.AddWithValue("@id", id);
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("User updated successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update user.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+            }
+        }
+
+        String query = "UPDATE advisers SET Faculty_id  = @fid, department  = @depart " +
+            " where user_id = @id ";
+
+        using (SqlCommand cmd = new SqlCommand(query, conn))
+        {
+
+            cmd.Parameters.AddWithValue("@fid", faculty_id);
+            cmd.Parameters.AddWithValue("@depart", department);
+            cmd.Parameters.AddWithValue("@id", id);
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Adviser updated successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update Adviser.");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+
+            }
+            conn.Close();
+        }
+
+    }
     // Get Course 
     public DataTable GetCourseForDropdown()
     {
@@ -112,52 +237,306 @@ public class Administrator : User {
             throw new Exception($"Error loading users: {ex.Message}");
         }
     }
+    // Get student info
+    public DataTable GetStudent()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT user_id, first_name, last_name, student_number, enrollment_year  FROM students";
+
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading students: {ex.Message}");
+        }
+    }
+    // get advisor info
+    public DataTable GetAdviser()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT user_id, faculty_id  , department  FROM advisers";
+
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading advisers: {ex.Message}");
+        }
+    }
     public bool DeleteUser(int user_id)
     {
-                try
+        try
         {
             string query = @"DELETE FROM Users WHERE user_id = @user_id";
             using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.Instance.GetConnection()))
-            //SqlConnection conn = dbConn.GetConnection() ))
             {
                 DatabaseConnection.Instance.Open();
                 //SqlConnection conn = dbConn.GetConnection();
                 cmd.Parameters.AddWithValue("@user_id", user_id);
-                
-               int rowAffected = cmd.ExecuteNonQuery();
+
+                int rowAffected = cmd.ExecuteNonQuery();
                 return rowAffected > 0;
-                
             }
         }
         catch (Exception ex)
         {
             throw new Exception($"Error deleting user: {ex.Message}");
         }
-    }
 
-    public void AddCourse(String code, String name, String type, int credit, String description) {
-        try
+    }
+    // Insert new user 
+    public void AddStudent(String email, String password, String role, String fName, String lName, String sNO, int year)
+    {
+        String insertUser = "INSERT INTO Users (email, password, role, created_date ) " +
+                           "VALUES (@Email, @Password, @Role, @createAt);" +
+                           "Select scope_Identity();";
+        using (SqlCommand cmd = new SqlCommand(insertUser, DatabaseConnection.Instance.GetConnection()))
         {
-            String insertCourse = "INSERT INTO Courses (course_code, Course_name, course_type, credit_hours, description) " +
-                           "VALUES (@CourseCode, @CourseName, @CourseType, @Credits, @Description)";
-            using (SqlCommand cmd = new SqlCommand(insertCourse, DatabaseConnection.Instance.GetConnection()))
+            DatabaseConnection.Instance.Open();
+            cmd.Parameters.AddWithValue("@Email", email);
+            cmd.Parameters.AddWithValue("@Password", password);
+            cmd.Parameters.AddWithValue("@Role", role);
+            cmd.Parameters.AddWithValue("@createAt", DateTime.Now);
+            int newid = Convert.ToInt32(cmd.ExecuteScalar());
+            String studentquery = "INSERT INTO Students (user_id, first_name, last_name, student_number, enrollment_year) " +
+                           "VALUES (@UserId, @FirstName, @LastName, @StudentNumber, @EnrollmentYear)";
+
+            //  throw exception
+            try
             {
-                DatabaseConnection.Instance.Open();
-                cmd.Parameters.AddWithValue("@CourseCode", code);
-                cmd.Parameters.AddWithValue("@CourseName", name);
-                cmd.Parameters.AddWithValue("@CourseType", type);
-                cmd.Parameters.AddWithValue("@Credits", credit);
-                cmd.Parameters.AddWithValue("@Description", description);
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("User added successfully.");
+
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add user.");
+                }
+            }
+            catch (Exception)
+            {
 
             }
-        } catch (Exception ex)
-        {
-            throw new Exception($"Error adding course: {ex.Message}");
+            using (SqlCommand cmdStudent = new SqlCommand(studentquery, DatabaseConnection.Instance.GetConnection()))
+            {
+                cmdStudent.Parameters.AddWithValue("@UserId", newid);
+                cmdStudent.Parameters.AddWithValue("@FirstName", fName);
+                cmdStudent.Parameters.AddWithValue("@LastName", lName);
+                cmdStudent.Parameters.AddWithValue("@StudentNumber", sNO);
+                cmdStudent.Parameters.AddWithValue("@EnrollmentYear", year);
+                try
+                {
+                    int rowsAffected = cmdStudent.ExecuteNonQuery();
+                    if (rowsAffected > 0)
+                    {
+                        MessageBox.Show("Student added successfully.");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to add student.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error" + ex.Message);
+                }
+            }
+            DatabaseConnection.Instance.Close();
         }
-        DatabaseConnection.Instance.Close();
     }
-    // public void UpdateProfile(){
+    // add user (Advisor )
+    public void AddAdvisor(String email, String password, String role, String facultyid, String depart)
+    {
+        String insertUser = "INSERT INTO Users (email, password, role, created_date ) " +
+                           "VALUES (@Email, @Password, @Role, @createAt);" +
+                           "Select scope_Identity();";
+        using (SqlCommand cmd = new SqlCommand(insertUser, DatabaseConnection.Instance.GetConnection()))
+        {
+            DatabaseConnection.Instance.Open();
+            cmd.Parameters.AddWithValue("@Email", email);
+            cmd.Parameters.AddWithValue("@Password", password);
+            cmd.Parameters.AddWithValue("@Role", role);
+            cmd.Parameters.AddWithValue("@createAt", DateTime.Now);
+            int newid = Convert.ToInt32(cmd.ExecuteScalar());
+            String advisorquery = "INSERT INTO advisers (user_id, faculty_id , department) " +
+                           "VALUES (@UserId, @fid,@department)";
 
-    //}
+            //  throw exception
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("User added successfully.");
+
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add user.");
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+            using (SqlCommand cmdAdvisor = new SqlCommand(advisorquery, DatabaseConnection.Instance.GetConnection()))
+            {
+                cmdAdvisor.Parameters.AddWithValue("@UserId", newid);
+                cmdAdvisor.Parameters.AddWithValue("@fid", facultyid);
+                cmdAdvisor.Parameters.AddWithValue("@department", depart);
+                try
+                {
+                    int rowsAffected = cmdAdvisor.ExecuteNonQuery();
+                    if (rowsAffected > 0)
+                    {
+                        MessageBox.Show("Advisor added successfully.");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to add advisor.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error" + ex.Message);
+                }
+            }
+            DatabaseConnection.Instance.Close();
+        }
+    }
+
+
+    public void AddCourse(String code, String name, String type, int credit, String description) {
+
+
+        String insertCourse = "INSERT INTO Courses (course_code, Course_name, course_type, credit_hours, description) " +
+                       "VALUES (@CourseCode, @CourseName, @CourseType, @Credits, @Description)";
+        using (SqlCommand cmd = new SqlCommand(insertCourse, DatabaseConnection.Instance.GetConnection()))
+        {
+            DatabaseConnection.Instance.Open();
+            cmd.Parameters.AddWithValue("@CourseCode", code);
+            cmd.Parameters.AddWithValue("@CourseName", name);
+            cmd.Parameters.AddWithValue("@CourseType", type);
+            cmd.Parameters.AddWithValue("@Credits", credit);
+            cmd.Parameters.AddWithValue("@Description", description);
+
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Course added successfully.");
+
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add Course.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+            }
+            DatabaseConnection.Instance.Close();
+        }
+    }
+
+    public bool UpdatePrereq(int courseID, List<int> courseIds)
+    {
+        String deleteQuery = "DELETE FROM Prerequisites WHERE course_id = @CourseID";
+        
+        using (SqlCommand dsql = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
+        {
+            DatabaseConnection.Instance.Open();
+
+            try
+            {
+                dsql.Parameters.AddWithValue("@CourseID", courseID);
+
+                String insertQuery = "INSERT INTO Prerequisites (course_id, prerequisite_course_id) " +
+                               "VALUES (@CourseID, @PrereqCourseID)";
+                foreach (int prereqId in courseIds)
+                {
+                    using (SqlCommand isql = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
+                    {
+                        isql.Parameters.AddWithValue("@CourseID", courseID);
+                        isql.Parameters.AddWithValue("@PrereqCourseID", prereqId);
+                        isql.ExecuteNonQuery();
+                    }
+                }
+                // transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                
+                MessageBox.Show("Error" + ex.Message);
+                return false;
+            }
+        }
+    }
+    // Update Corereq
+    public bool UpdateCorereq(int courseID, List<int> courseIds)
+    {
+        String deleteQuery = "DELETE FROM corequisites WHERE course_id = @CourseID";
+        //  sqlTransaction transaction = DatabaseConnection.Instance.GetConnection().BeginTransaction();
+        using (SqlCommand dsql = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
+        {
+            DatabaseConnection.Instance.Open();
+
+            try
+            {
+                dsql.Parameters.AddWithValue("@CourseID", courseID);
+
+                String insertQuery = "INSERT INTO corequisites (course_id, corequisite_course_id) " +
+                               "VALUES (@CourseID, @corereqCourseID)";
+                foreach (int prereqId in courseIds)
+                {
+                    using (SqlCommand isql = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
+                    {
+                        isql.Parameters.AddWithValue("@CourseID", courseID);
+                        isql.Parameters.AddWithValue("@corereqCourseID", prereqId);
+                        isql.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error" + ex.Message);
+                return false;
+            }
+        }
+    }
+
+
+    public void UpdateProfile()
+    {
+      
+    }
 
 }//end Administrator
