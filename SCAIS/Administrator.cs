@@ -90,7 +90,7 @@ public class Administrator : User {
         }
     }
     // Edit student 
-    public void EditStudent(int id, String email, String password, String FirstName, String LastName, String sno, int year)
+    public void EditStudent(int id, String email, String password, String FirstName, String LastName, String sno, int year, int? specializationId = null)
     {
         DatabaseConnection dbConn = DatabaseConnection.Instance;
         SqlConnection conn = dbConn.GetConnection();
@@ -119,7 +119,7 @@ public class Administrator : User {
             }
         }
 
-        String query = "UPDATE Students SET first_name = @fname, last_name = @lname, student_number = @snum, enrollment_year = @year" +
+        String query = "UPDATE Students SET first_name = @fname, last_name = @lname, student_number = @snum, enrollment_year = @year, specialization_id = @specId" +
             " where user_id = @id ";
 
         using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -129,6 +129,7 @@ public class Administrator : User {
             cmd.Parameters.AddWithValue("@lname", LastName);
             cmd.Parameters.AddWithValue("@snum", sno);
             cmd.Parameters.AddWithValue("@year", year);
+            cmd.Parameters.AddWithValue("@specId", specializationId.HasValue ? (object)specializationId.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@id", id);
             try
             {
@@ -213,6 +214,43 @@ public class Administrator : User {
         }
 
     }
+    // Get courses available for a semester (excluding already added courses)
+    public DataTable GetAvailableCoursesForSemester(int semesterId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            c.course_id, 
+                            c.course_code, 
+                            c.course_name,
+                            c.course_code + ' - ' + c.course_name AS course_display 
+                            FROM courses c
+                            WHERE c.is_active = 1
+                            AND c.course_id NOT IN (
+                                SELECT course_id 
+                                FROM semester_offerings 
+                                WHERE semester_id = @semesterId
+                            )
+                            ORDER BY c.course_code";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@semesterId", semesterId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading available courses: {ex.Message}");
+        }
+    }
+
     // Get Course 
     public DataTable GetCourseForDropdown()
     {
@@ -221,7 +259,12 @@ public class Administrator : User {
             DatabaseConnection dbConn = DatabaseConnection.Instance;
             SqlConnection conn = dbConn.GetConnection();
 
-            string query = @"SELECT course_id, course_code, course_name FROM courses";
+            string query = @"SELECT course_id, 
+                            course_code, 
+                            course_name,
+                            course_code + ' - ' + course_name AS course_display 
+                            FROM courses
+                            ORDER BY course_code";
 
 
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -234,7 +277,39 @@ public class Administrator : User {
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error loading users: {ex.Message}");
+            throw new Exception($"Error loading courses: {ex.Message}");
+        }
+    }
+    // Get all courses with details
+    public DataTable GetAllCourses()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            course_id,
+                            course_code,
+                            course_name,
+                            course_type,
+                            credit_hours,
+                            description,
+                            is_active
+                            FROM courses
+                            ORDER BY course_code";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading courses: {ex.Message}");
         }
     }
     // Get student info
@@ -245,8 +320,180 @@ public class Administrator : User {
             DatabaseConnection dbConn = DatabaseConnection.Instance;
             SqlConnection conn = dbConn.GetConnection();
 
-            string query = @"SELECT user_id, first_name, last_name, student_number, enrollment_year  FROM students";
+            string query = @"SELECT user_id, first_name, last_name, student_number, enrollment_year, specialization_id FROM students";
 
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading students: {ex.Message}");
+        }
+    }
+
+    // Get all specializations with full details
+    public DataTable GetAllSpecializations()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            specialization_id,
+                            specialization_code,
+                            specialization_name,
+                            description,
+                            required_credit_hours
+                            FROM specializations
+                            ORDER BY specialization_name";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading specializations: {ex.Message}");
+        }
+    }
+
+    // Add new specialization
+    public bool AddSpecialization(string specializationCode, string specializationName, string description, int requiredCreditHours)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"INSERT INTO specializations (specialization_code, specialization_name, description, required_credit_hours)
+                            VALUES (@specializationCode, @specializationName, @description, @requiredCreditHours)";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@specializationCode", specializationCode);
+                cmd.Parameters.AddWithValue("@specializationName", specializationName);
+                cmd.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(description) ? (object)DBNull.Value : description);
+                cmd.Parameters.AddWithValue("@requiredCreditHours", requiredCreditHours);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Specialization added successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error adding specialization: {ex.Message}");
+        }
+    }
+
+    // Update existing specialization
+    public bool UpdateSpecialization(int specializationId, string specializationCode, string specializationName, string description, int requiredCreditHours)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"UPDATE specializations 
+                            SET specialization_code = @specializationCode,
+                                specialization_name = @specializationName, 
+                                description = @description, 
+                                required_credit_hours = @requiredCreditHours
+                            WHERE specialization_id = @specializationId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@specializationId", specializationId);
+                cmd.Parameters.AddWithValue("@specializationCode", specializationCode);
+                cmd.Parameters.AddWithValue("@specializationName", specializationName);
+                cmd.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(description) ? (object)DBNull.Value : description);
+                cmd.Parameters.AddWithValue("@requiredCreditHours", requiredCreditHours);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Specialization updated successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error updating specialization: {ex.Message}");
+        }
+    }
+
+    // Get all specializations
+    public DataTable GetSpecializations()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT specialization_id, specialization_name FROM specializations ORDER BY specialization_name";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading specializations: {ex.Message}");
+        }
+    }
+    // Get all students with user information
+    public DataTable GetAllStudentsWithUsers()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            s.student_id,
+                            s.user_id,
+                            u.email,
+                            s.first_name,
+                            s.last_name,
+                            s.student_number,
+                            s.enrollment_year,
+                            s.current_semester,
+                            s.gpa,
+                            s.completed_credit_hours,
+                            sp.specialization_name
+                            FROM students s
+                            INNER JOIN users u ON s.user_id = u.user_id
+                            LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+                            ORDER BY s.last_name, s.first_name";
 
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
@@ -307,7 +554,7 @@ public class Administrator : User {
 
     }
     // Insert new user 
-    public void AddStudent(String email, String password, String role, String fName, String lName, String sNO, int year)
+    public void AddStudent(String email, String password, String role, String fName, String lName, String sNO, int year, int? specializationId = null)
     {
         String insertUser = "INSERT INTO Users (email, password, role, created_date ) " +
                            "VALUES (@Email, @Password, @Role, @createAt);" +
@@ -320,8 +567,8 @@ public class Administrator : User {
             cmd.Parameters.AddWithValue("@Role", role);
             cmd.Parameters.AddWithValue("@createAt", DateTime.Now);
             int newid = Convert.ToInt32(cmd.ExecuteScalar());
-            String studentquery = "INSERT INTO Students (user_id, first_name, last_name, student_number, enrollment_year) " +
-                           "VALUES (@UserId, @FirstName, @LastName, @StudentNumber, @EnrollmentYear)";
+            String studentquery = "INSERT INTO Students (user_id, first_name, last_name, student_number, enrollment_year, specialization_id) " +
+                           "VALUES (@UserId, @FirstName, @LastName, @StudentNumber, @EnrollmentYear, @SpecializationId)";
 
             //  throw exception
             try
@@ -348,6 +595,7 @@ public class Administrator : User {
                 cmdStudent.Parameters.AddWithValue("@LastName", lName);
                 cmdStudent.Parameters.AddWithValue("@StudentNumber", sNO);
                 cmdStudent.Parameters.AddWithValue("@EnrollmentYear", year);
+                cmdStudent.Parameters.AddWithValue("@SpecializationId", specializationId.HasValue ? (object)specializationId.Value : DBNull.Value);
                 try
                 {
                     int rowsAffected = cmdStudent.ExecuteNonQuery();
@@ -465,71 +713,234 @@ public class Administrator : User {
         }
     }
 
-    public bool UpdatePrereq(int courseID, List<int> courseIds)
+    // Add course and return the new course ID
+    public int AddCourseAndGetId(String code, String name, String type, int credit, String description)
     {
-        String deleteQuery = "DELETE FROM Prerequisites WHERE course_id = @CourseID";
-        
-        using (SqlCommand dsql = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
+        String insertCourse = "INSERT INTO Courses (course_code, Course_name, course_type, credit_hours, description) " +
+                       "VALUES (@CourseCode, @CourseName, @CourseType, @Credits, @Description); SELECT SCOPE_IDENTITY();";
+        using (SqlCommand cmd = new SqlCommand(insertCourse, DatabaseConnection.Instance.GetConnection()))
         {
             DatabaseConnection.Instance.Open();
+            cmd.Parameters.AddWithValue("@CourseCode", code);
+            cmd.Parameters.AddWithValue("@CourseName", name);
+            cmd.Parameters.AddWithValue("@CourseType", type);
+            cmd.Parameters.AddWithValue("@Credits", credit);
+            cmd.Parameters.AddWithValue("@Description", description);
 
             try
             {
-                dsql.Parameters.AddWithValue("@CourseID", courseID);
-
-                String insertQuery = "INSERT INTO Prerequisites (course_id, prerequisite_course_id) " +
-                               "VALUES (@CourseID, @PrereqCourseID)";
-                foreach (int prereqId in courseIds)
+                object result = cmd.ExecuteScalar();
+                int newCourseId = Convert.ToInt32(result);
+                
+                if (newCourseId > 0)
                 {
-                    using (SqlCommand isql = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
-                    {
-                        isql.Parameters.AddWithValue("@CourseID", courseID);
-                        isql.Parameters.AddWithValue("@PrereqCourseID", prereqId);
-                        isql.ExecuteNonQuery();
-                    }
+                    MessageBox.Show("Course added successfully.");
+                    DatabaseConnection.Instance.Close();
+                    return newCourseId;
                 }
-                // transaction.Commit();
-                return true;
+                else
+                {
+                    MessageBox.Show("Failed to add Course.");
+                    DatabaseConnection.Instance.Close();
+                    return 0;
+                }
             }
             catch (Exception ex)
             {
-                
-                MessageBox.Show("Error" + ex.Message);
-                return false;
+                MessageBox.Show("Error: " + ex.Message);
+                DatabaseConnection.Instance.Close();
+                return 0;
             }
+        }
+    }
+
+    // Get prerequisites for a course
+    public DataTable GetPrerequisites(int courseId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT prerequisite_course_id FROM prerequisites WHERE course_id = @courseId";
+
+            System.Diagnostics.Debug.WriteLine($"GetPrerequisites called for course_id: {courseId}");
+            
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@courseId", courseId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                
+                System.Diagnostics.Debug.WriteLine($"GetPrerequisites query returned {dt.Rows.Count} rows");
+                foreach (DataRow row in dt.Rows)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  prerequisite_course_id: {row["prerequisite_course_id"]}");
+                }
+                
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ERROR in GetPrerequisites: {ex.Message}");
+            throw new Exception($"Error loading prerequisites: {ex.Message}");
+        }
+    }
+
+    // Get corequisites for a course
+    public DataTable GetCorequisites(int courseId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT corequisite_course_id FROM corequisites WHERE course_id = @courseId";
+
+            System.Diagnostics.Debug.WriteLine($"GetCorequisites called for course_id: {courseId}");
+            
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@courseId", courseId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                
+                System.Diagnostics.Debug.WriteLine($"GetCorequisites query returned {dt.Rows.Count} rows");
+                foreach (DataRow row in dt.Rows)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  corequisite_course_id: {row["corequisite_course_id"]}");
+                }
+                
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ERROR in GetCorequisites: {ex.Message}");
+            throw new Exception($"Error loading corequisites: {ex.Message}");
+        }
+    }
+
+    // Edit course
+    public void EditCourse(int courseId, string code, string name, string type, int credit, string description, bool isActive)
+    {
+        DatabaseConnection dbConn = DatabaseConnection.Instance;
+        SqlConnection conn = dbConn.GetConnection();
+        
+        string courseQuery = @"UPDATE courses SET 
+                              course_code = @code, 
+                              course_name = @name, 
+                              course_type = @type, 
+                              credit_hours = @credit, 
+                              description = @description,
+                              is_active = @isActive
+                              WHERE course_id = @id";
+        
+        using (SqlCommand cmd = new SqlCommand(courseQuery, conn))
+        {
+            conn.Open();
+            cmd.Parameters.AddWithValue("@code", code);
+            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@type", type);
+            cmd.Parameters.AddWithValue("@credit", credit);
+            cmd.Parameters.AddWithValue("@description", description);
+            cmd.Parameters.AddWithValue("@isActive", isActive);
+            cmd.Parameters.AddWithValue("@id", courseId);
+            
+            try
+            {
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Course updated successfully.");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to update course.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+            conn.Close();
+        }
+    }
+
+    public bool UpdatePrereq(int courseID, List<int> courseIds)
+    {
+        try
+        {
+            DatabaseConnection.Instance.Open();
+            
+            // Delete existing prerequisites
+            String deleteQuery = "DELETE FROM Prerequisites WHERE course_id = @CourseID";
+            using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
+            {
+                deleteCmd.Parameters.AddWithValue("@CourseID", courseID);
+                deleteCmd.ExecuteNonQuery();
+            }
+
+            // Insert new prerequisites
+            String insertQuery = "INSERT INTO Prerequisites (course_id, prerequisite_course_id) VALUES (@CourseID, @PrereqCourseID)";
+            foreach (int prereqId in courseIds)
+            {
+                using (SqlCommand insertCmd = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
+                {
+                    insertCmd.Parameters.AddWithValue("@CourseID", courseID);
+                    insertCmd.Parameters.AddWithValue("@PrereqCourseID", prereqId);
+                    insertCmd.ExecuteNonQuery();
+                }
+            }
+            
+            DatabaseConnection.Instance.Close();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            DatabaseConnection.Instance.Close();
+            MessageBox.Show("Error: " + ex.Message);
+            return false;
         }
     }
     // Update Corereq
     public bool UpdateCorereq(int courseID, List<int> courseIds)
     {
-        String deleteQuery = "DELETE FROM corequisites WHERE course_id = @CourseID";
-        //  sqlTransaction transaction = DatabaseConnection.Instance.GetConnection().BeginTransaction();
-        using (SqlCommand dsql = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
+        try
         {
             DatabaseConnection.Instance.Open();
-
-            try
+            
+            // Delete existing corequisites
+            String deleteQuery = "DELETE FROM corequisites WHERE course_id = @CourseID";
+            using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, DatabaseConnection.Instance.GetConnection()))
             {
-                dsql.Parameters.AddWithValue("@CourseID", courseID);
+                deleteCmd.Parameters.AddWithValue("@CourseID", courseID);
+                deleteCmd.ExecuteNonQuery();
+            }
 
-                String insertQuery = "INSERT INTO corequisites (course_id, corequisite_course_id) " +
-                               "VALUES (@CourseID, @corereqCourseID)";
-                foreach (int prereqId in courseIds)
+            // Insert new corequisites
+            String insertQuery = "INSERT INTO corequisites (course_id, corequisite_course_id) VALUES (@CourseID, @corereqCourseID)";
+            foreach (int coreqId in courseIds)
+            {
+                using (SqlCommand insertCmd = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
                 {
-                    using (SqlCommand isql = new SqlCommand(insertQuery, DatabaseConnection.Instance.GetConnection()))
-                    {
-                        isql.Parameters.AddWithValue("@CourseID", courseID);
-                        isql.Parameters.AddWithValue("@corereqCourseID", prereqId);
-                        isql.ExecuteNonQuery();
-                    }
+                    insertCmd.Parameters.AddWithValue("@CourseID", courseID);
+                    insertCmd.Parameters.AddWithValue("@corereqCourseID", coreqId);
+                    insertCmd.ExecuteNonQuery();
                 }
-                return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error" + ex.Message);
-                return false;
-            }
+            
+            DatabaseConnection.Instance.Close();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            DatabaseConnection.Instance.Close();
+            MessageBox.Show("Error: " + ex.Message);
+            return false;
         }
     }
 
@@ -537,6 +948,336 @@ public class Administrator : User {
     public void UpdateProfile()
     {
       
+    }
+
+    // Assign student to adviser
+    public bool AssignStudentToAdviser(int studentId, int adviserId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"UPDATE students SET adviser_id = @adviserId WHERE student_id = @studentId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@adviserId", adviserId);
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                return rowsAffected > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error assigning student to adviser: {ex.Message}");
+        }
+    }
+
+    // Get students with their assigned advisers
+    public DataTable GetStudentsWithAdvisers()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            s.student_id,
+                            s.student_number,
+                            s.first_name + ' ' + s.last_name AS student_name,
+                            u.email AS student_email,
+                            s.enrollment_year,
+                            s.current_semester,
+                            sp.specialization_name,
+                            ISNULL(a.faculty_id, 'Not Assigned') AS adviser_faculty_id,
+                            ISNULL(a.department, 'N/A') AS adviser_department,
+                            s.adviser_id
+                            FROM students s
+                            INNER JOIN users u ON s.user_id = u.user_id
+                            LEFT JOIN specializations sp ON s.specialization_id = sp.specialization_id
+                            LEFT JOIN advisers a ON s.adviser_id = a.adviser_id
+                            ORDER BY s.last_name, s.first_name";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading students with advisers: {ex.Message}");
+        }
+    }
+
+    // Get all advisers for dropdown
+    public DataTable GetAdvisersForDropdown()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            a.adviser_id,
+                            a.faculty_id + ' - ' + a.department AS adviser_display
+                            FROM advisers a
+                            ORDER BY a.faculty_id";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading advisers: {ex.Message}");
+        }
+    }
+
+    // Get all semesters
+    public DataTable GetAllSemesters()
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            semester_id,
+                            semester_name,
+                            academic_year,
+                            start_date,
+                            end_date,
+                            is_active
+                            FROM semesters
+                            ORDER BY start_date DESC";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading semesters: {ex.Message}");
+        }
+    }
+
+    // Add new semester
+    public bool AddSemester(string semesterName, string academicYear, DateTime startDate, DateTime endDate, bool isActive)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"INSERT INTO semesters (semester_name, academic_year, start_date, end_date, is_active)
+                            VALUES (@semesterName, @academicYear, @startDate, @endDate, @isActive)";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@semesterName", semesterName);
+                cmd.Parameters.AddWithValue("@academicYear", academicYear);
+                cmd.Parameters.AddWithValue("@startDate", startDate);
+                cmd.Parameters.AddWithValue("@endDate", endDate);
+                cmd.Parameters.AddWithValue("@isActive", isActive);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Semester added successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error adding semester: {ex.Message}");
+        }
+    }
+
+    // Update existing semester
+    public bool UpdateSemester(int semesterId, string semesterName, string academicYear, DateTime startDate, DateTime endDate, bool isActive)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"UPDATE semesters 
+                            SET semester_name = @semesterName, 
+                                academic_year = @academicYear, 
+                                start_date = @startDate, 
+                                end_date = @endDate, 
+                                is_active = @isActive
+                            WHERE semester_id = @semesterId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@semesterId", semesterId);
+                cmd.Parameters.AddWithValue("@semesterName", semesterName);
+                cmd.Parameters.AddWithValue("@academicYear", academicYear);
+                cmd.Parameters.AddWithValue("@startDate", startDate);
+                cmd.Parameters.AddWithValue("@endDate", endDate);
+                cmd.Parameters.AddWithValue("@isActive", isActive);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                if (rowsAffected > 0)
+                {
+                    MessageBox.Show("Semester updated successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error updating semester: {ex.Message}");
+        }
+    }
+
+    // Get semester offerings for a specific semester
+    public DataTable GetSemesterOfferings(int semesterId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            so.offering_id,
+                            so.course_id,
+                            c.course_code,
+                            c.course_name,
+                            c.credit_hours,
+                            so.max_capacity,
+                            so.current_enrollment
+                            FROM semester_offerings so
+                            INNER JOIN courses c ON so.course_id = c.course_id
+                            WHERE so.semester_id = @semesterId
+                            ORDER BY c.course_code";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@semesterId", semesterId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading semester offerings: {ex.Message}");
+        }
+    }
+
+    // Add course offering to semester
+    public bool AddSemesterOffering(int semesterId, int courseId, int maxCapacity)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"INSERT INTO semester_offerings (semester_id, course_id, max_capacity, current_enrollment)
+                            VALUES (@semesterId, @courseId, @maxCapacity, 0)";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@semesterId", semesterId);
+                cmd.Parameters.AddWithValue("@courseId", courseId);
+                cmd.Parameters.AddWithValue("@maxCapacity", maxCapacity);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                return rowsAffected > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error adding course offering: {ex.Message}");
+        }
+    }
+
+    // Remove course offering from semester
+    public bool RemoveSemesterOffering(int offeringId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"DELETE FROM semester_offerings WHERE offering_id = @offeringId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@offeringId", offeringId);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                return rowsAffected > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error removing course offering: {ex.Message}");
+        }
+    }
+
+    // Update semester offering capacity
+    public bool UpdateOfferingCapacity(int offeringId, int maxCapacity)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"UPDATE semester_offerings SET max_capacity = @maxCapacity WHERE offering_id = @offeringId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@maxCapacity", maxCapacity);
+                cmd.Parameters.AddWithValue("@offeringId", offeringId);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                return rowsAffected > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error updating offering capacity: {ex.Message}");
+        }
     }
 
 }//end Administrator
