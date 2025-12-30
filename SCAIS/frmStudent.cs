@@ -92,7 +92,6 @@ namespace SCAIS
                 this.Close();
         }
 
-        // TODO: We'll add these next step
         private void LoadAcademicRecord()
         {
             ClearContent();
@@ -167,6 +166,79 @@ namespace SCAIS
                         Font = new Font("Segoe UI", 10)
                     });
                 }
+                
+                // Course History heading
+                var lblCourseHistory = new Label
+                {
+                    Text = "Course History",
+                    Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                    AutoSize = true,
+                    Location = new Point(20, 215)
+                };
+                pnlContent.Controls.Add(lblCourseHistory);
+                
+                // DataGridView for course enrollments
+                var dgvEnrollments = new DataGridView
+                {
+                    Location = new Point(20, 245),
+                    Size = new Size(pnlContent.Width - 40, pnlContent.Height - 265),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    ReadOnly = true,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    BackgroundColor = Color.White,
+                    BorderStyle = BorderStyle.None,
+                    RowHeadersVisible = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    Font = new Font("Segoe UI", 9)
+                };
+                pnlContent.Controls.Add(dgvEnrollments);
+                
+                // Load academic history (enrollments with status and grades)
+                DataTable dtHistory = studentModel.GetAcademicHistory(studentId);
+                dgvEnrollments.DataSource = dtHistory;
+                
+                // Set column headers
+                if (dgvEnrollments.Columns.Contains("course_code"))
+                    dgvEnrollments.Columns["course_code"].HeaderText = "Course Code";
+                if (dgvEnrollments.Columns.Contains("course_name"))
+                    dgvEnrollments.Columns["course_name"].HeaderText = "Course Name";
+                if (dgvEnrollments.Columns.Contains("credit_hours"))
+                {
+                    dgvEnrollments.Columns["credit_hours"].HeaderText = "Credits";
+                    dgvEnrollments.Columns["credit_hours"].Width = 70;
+                }
+                if (dgvEnrollments.Columns.Contains("grade"))
+                {
+                    dgvEnrollments.Columns["grade"].HeaderText = "Grade";
+                    dgvEnrollments.Columns["grade"].Width = 80;
+                }
+                if (dgvEnrollments.Columns.Contains("status"))
+                {
+                    dgvEnrollments.Columns["status"].HeaderText = "Status";
+                    dgvEnrollments.Columns["status"].Width = 120;
+                }
+                if (dgvEnrollments.Columns.Contains("semester"))
+                {
+                    dgvEnrollments.Columns["semester"].HeaderText = "Semester";
+                    dgvEnrollments.Columns["semester"].Width = 150;
+                }
+                
+                // Show message if no courses found
+                if (dtHistory.Rows.Count == 0)
+                {
+                    var lblNoCourses = new Label
+                    {
+                        Text = "No course enrollments found yet.",
+                        Font = new Font("Segoe UI", 10, FontStyle.Italic),
+                        ForeColor = Color.Gray,
+                        AutoSize = true,
+                        Location = new Point(20, 250)
+                    };
+                    pnlContent.Controls.Add(lblNoCourses);
+                }
             }
             catch (Exception ex)
             {
@@ -189,12 +261,23 @@ namespace SCAIS
                 Location = new Point(20, 20)
             };
             pnlContent.Controls.Add(lblTitle);
+            
+            // Info label
+            var lblInfo = new Label
+            {
+                Text = "Courses with unmet prerequisites/corequisites are shown in gray.",
+                Font = new Font("Segoe UI", 9, FontStyle.Italic),
+                ForeColor = Color.FromArgb(150, 150, 150),
+                AutoSize = true,
+                Location = new Point(20, 50)
+            };
+            pnlContent.Controls.Add(lblInfo);
 
             // Grid
             var dgv = new DataGridView
             {
-                Location = new Point(20, 70),
-                Size = new Size(pnlContent.Width - 40, pnlContent.Height - 90),
+                Location = new Point(20, 75),
+                Size = new Size(pnlContent.Width - 40, pnlContent.Height - 95),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 ReadOnly = true,
@@ -228,6 +311,27 @@ namespace SCAIS
 
                 if (dgv.Columns.Contains("course_id"))
                     dgv.Columns["course_id"].Visible = false;
+                
+                // Style rows based on eligibility
+                dgv.CellFormatting += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.RowIndex >= dgv.Rows.Count)
+                        return;
+                        
+                    DataGridViewRow row = dgv.Rows[e.RowIndex];
+                    if (row.Cells["eligibility_status"].Value != null)
+                    {
+                        string status = row.Cells["eligibility_status"].Value.ToString();
+                        if (status != "Eligible")
+                        {
+                            // Gray out ineligible courses
+                            e.CellStyle.ForeColor = Color.Gray;
+                            e.CellStyle.BackColor = Color.FromArgb(245, 245, 245);
+                            e.CellStyle.SelectionForeColor = Color.DarkGray;
+                            e.CellStyle.SelectionBackColor = Color.FromArgb(230, 230, 230);
+                        }
+                    }
+                };
 
                 // If nothing returned
                 if (dt.Rows.Count == 0)
@@ -261,7 +365,7 @@ namespace SCAIS
             // Info label (optional)
             var lblInfo = new Label
             {
-                Text = "Tick the courses you want, then click Submit.",
+                Text = "Select eligible courses (checkboxes disabled for courses with unmet prerequisites/corequisites).",
                 Font = new Font("Segoe UI", 10),
                 ForeColor = Color.FromArgb(90, 90, 90),
                 AutoSize = true,
@@ -337,16 +441,83 @@ namespace SCAIS
                 if (dgv.Columns.Contains("eligibility_status"))
                     dgv.Columns["eligibility_status"].HeaderText = "Status";
 
-                // Nice: make checkbox editable on single click
+                // Style rows based on eligibility and disable checkbox for ineligible courses
+                dgv.CellFormatting += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.RowIndex >= dgv.Rows.Count)
+                        return;
+                        
+                    DataGridViewRow row = dgv.Rows[e.RowIndex];
+                    if (row.Cells["eligibility_status"].Value != null)
+                    {
+                        string status = row.Cells["eligibility_status"].Value.ToString();
+                        if (status != "Eligible")
+                        {
+                            // Gray out ineligible courses
+                            e.CellStyle.ForeColor = Color.Gray;
+                            e.CellStyle.BackColor = Color.FromArgb(245, 245, 245);
+                            e.CellStyle.SelectionForeColor = Color.DarkGray;
+                            e.CellStyle.SelectionBackColor = Color.FromArgb(230, 230, 230);
+                        }
+                    }
+                };
+
+                // Prevent editing checkbox for ineligible courses
+                dgv.CellBeginEdit += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                        return;
+                        
+                    // Check if it's the checkbox column
+                    if (dgv.Columns[e.ColumnIndex].Name == "chkSelect")
+                    {
+                        DataGridViewRow row = dgv.Rows[e.RowIndex];
+                        if (row.Cells["eligibility_status"].Value != null)
+                        {
+                            string status = row.Cells["eligibility_status"].Value.ToString();
+                            if (status != "Eligible")
+                            {
+                                // Cancel the edit before it happens
+                                DataGridViewCellCancelEventArgs cancelArgs = e as DataGridViewCellCancelEventArgs;
+                                if (cancelArgs != null)
+                                {
+                                    cancelArgs.Cancel = true;
+                                }
+                                MessageBox.Show($"Cannot select this course. {status}.", "Prerequisites/Corequisites Not Met",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                };
+
+                // Make checkbox editable on single click, but validate changes
                 dgv.CurrentCellDirtyStateChanged += (s, e) =>
                 {
-                    if (dgv.IsCurrentCellDirty)
+                    if (dgv.IsCurrentCellDirty && dgv.CurrentCell is DataGridViewCheckBoxCell)
+                    {
+                        // Check if trying to check an ineligible course
+                        int rowIndex = dgv.CurrentCell.RowIndex;
+                        if (rowIndex >= 0 && dgv.Columns[dgv.CurrentCell.ColumnIndex].Name == "chkSelect")
+                        {
+                            DataGridViewRow row = dgv.Rows[rowIndex];
+                            if (row.Cells["eligibility_status"].Value != null)
+                            {
+                                string status = row.Cells["eligibility_status"].Value.ToString();
+                                if (status != "Eligible")
+                                {
+                                    // Don't commit changes for ineligible courses
+                                    dgv.CancelEdit();
+                                    return;
+                                }
+                            }
+                        }
                         dgv.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                    }
                 };
 
                 btnSubmit.Click += (s, e) =>
                 {
-                    // Collect selected IDs
+                    // Collect selected IDs (only eligible ones)
                     var selectedCourseIds = new List<int>();
 
                     foreach (DataGridViewRow row in dgv.Rows)
@@ -355,6 +526,14 @@ namespace SCAIS
                                          Convert.ToBoolean(row.Cells["chkSelect"].Value);
 
                         if (!isChecked) continue;
+                        
+                        // Double-check eligibility
+                        string status = row.Cells["eligibility_status"].Value?.ToString() ?? "";
+                        if (status != "Eligible")
+                        {
+                            // Skip ineligible courses
+                            continue;
+                        }
 
                         if (!dgv.Columns.Contains("course_id") || row.Cells["course_id"].Value == null)
                             continue;
@@ -364,7 +543,7 @@ namespace SCAIS
 
                     if (selectedCourseIds.Count == 0)
                     {
-                        MessageBox.Show("Please select at least one course.", "No Selection",
+                        MessageBox.Show("Please select at least one eligible course.", "No Selection",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }

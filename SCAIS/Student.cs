@@ -117,17 +117,39 @@ public class Student : User
             DatabaseConnection dbConn = DatabaseConnection.Instance;
             SqlConnection conn = dbConn.GetConnection();
 
-            string query = @"SELECT c.course_id, c.course_code, c.course_name, c.credit_hours, c.course_type,
-                            CASE WHEN EXISTS (
-                                SELECT 1 FROM prerequisites p
-                                WHERE p.course_id = c.course_id
-                                AND NOT EXISTS (
-                                    SELECT 1 FROM enrollments e2
-                                    WHERE e2.student_id = @studentId
-                                    AND e2.course_id = p.prerequisite_course_id
-                                    AND e2.status = 'Completed'
-                                )
-                            ) THEN 'Prerequisites Not Met' ELSE 'Eligible' END AS eligibility_status
+            string query = @"SELECT 
+                            c.course_id, 
+                            c.course_code, 
+                            c.course_name, 
+                            c.credit_hours, 
+                            c.course_type,
+                            CASE 
+                                -- Check if ANY prerequisite is not met (not completed or grade is F)
+                                WHEN EXISTS (
+                                    SELECT 1 FROM prerequisites p
+                                    WHERE p.course_id = c.course_id
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM enrollments e2
+                                        WHERE e2.student_id = @studentId
+                                        AND e2.course_id = p.prerequisite_course_id
+                                        AND e2.status = 'Completed'
+                                        AND (e2.grade IS NULL OR e2.grade != 'F')
+                                    )
+                                ) THEN 'Prerequisites Not Met'
+                                -- Check if ANY corequisite is not met (not enrolled or completed)
+                                WHEN EXISTS (
+                                    SELECT 1 FROM corequisites co
+                                    WHERE co.course_id = c.course_id
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM enrollments e3
+                                        WHERE e3.student_id = @studentId
+                                        AND e3.course_id = co.corequisite_course_id
+                                        AND e3.status IN ('Completed', 'InProgress', 'Pending')
+                                        AND e3.approval_status IN ('Approved', 'PendingApproval')
+                                    )
+                                ) THEN 'Corequisites Not Met'
+                                ELSE 'Eligible' 
+                            END AS eligibility_status
                             FROM courses c
                             WHERE c.is_active = 1
                             AND c.course_id NOT IN (

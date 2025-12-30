@@ -1280,4 +1280,75 @@ public class Administrator : User {
         }
     }
 
+    // Get student enrollments with course details
+    public DataTable GetStudentEnrollments(int studentId)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"SELECT 
+                            e.enrollment_id,
+                            c.course_code,
+                            c.course_name,
+                            c.credit_hours,
+                            sem.semester_name + ' ' + sem.academic_year AS semester,
+                            ISNULL(e.status, 'Pending') AS status,
+                            ISNULL(e.grade, '') AS grade,
+                            e.approval_status
+                            FROM enrollments e
+                            INNER JOIN courses c ON e.course_id = c.course_id
+                            INNER JOIN semesters sem ON e.semester_id = sem.semester_id
+                            WHERE e.student_id = @studentId
+                            AND e.approval_status = 'Approved'
+                            ORDER BY sem.start_date DESC, c.course_code";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading student enrollments: {ex.Message}");
+        }
+    }
+
+    // Update enrollment status and grade
+    public bool UpdateEnrollmentStatusAndGrade(int enrollmentId, string status, string grade)
+    {
+        try
+        {
+            DatabaseConnection dbConn = DatabaseConnection.Instance;
+            SqlConnection conn = dbConn.GetConnection();
+
+            string query = @"UPDATE enrollments 
+                            SET status = @status, 
+                                grade = @grade
+                            WHERE enrollment_id = @enrollmentId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@status", status);
+                cmd.Parameters.AddWithValue("@grade", string.IsNullOrWhiteSpace(grade) ? (object)DBNull.Value : grade);
+                cmd.Parameters.AddWithValue("@enrollmentId", enrollmentId);
+
+                dbConn.Open();
+                int rowsAffected = cmd.ExecuteNonQuery();
+                dbConn.Close();
+
+                return rowsAffected > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error updating enrollment: {ex.Message}");
+        }
+    }
+
 }//end Administrator

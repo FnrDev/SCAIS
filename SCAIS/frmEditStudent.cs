@@ -21,6 +21,11 @@ namespace SCAIS
         private ComboBox cmbSpecialization;
         private Button btnSave;
         private Button btnCancel;
+        
+        // Enrollment management controls
+        private DataGridView dgvEnrollments;
+        private Button btnSaveEnrollments;
+        private Label lblEnrollmentsTitle;
 
         public frmEditStudent(int studentId, int userId, string email, string firstName, 
             string lastName, string studentNumber, int enrollmentYear, Administrator admin)
@@ -41,7 +46,7 @@ namespace SCAIS
         private void InitializeComponent()
         {
             this.Text = isAddMode ? "Add New Student" : "Edit Student Information";
-            this.Size = new Size(600, 550);
+            this.Size = new Size(900, isAddMode ? 550 : 750);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -220,6 +225,57 @@ namespace SCAIS
             btnCancel.FlatAppearance.BorderSize = 0;
             btnCancel.Click += BtnCancel_Click;
             this.Controls.Add(btnCancel);
+            
+            // Only show enrollment management section if editing an existing student
+            if (!isAddMode && studentId > 0)
+            {
+                // Enrollments Section Title
+                lblEnrollmentsTitle = new Label
+                {
+                    Text = "Student Course Enrollments",
+                    Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(44, 62, 80),
+                    Location = new Point(30, 460),
+                    AutoSize = true
+                };
+                this.Controls.Add(lblEnrollmentsTitle);
+                
+                // DataGridView for Enrollments
+                dgvEnrollments = new DataGridView
+                {
+                    Location = new Point(30, 495),
+                    Size = new Size(820, 150),
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    BackgroundColor = Color.White,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    RowHeadersVisible = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    Font = new Font("Segoe UI", 9)
+                };
+                this.Controls.Add(dgvEnrollments);
+                
+                // Save Enrollments Button
+                btnSaveEnrollments = new Button
+                {
+                    Text = "Save Enrollment Changes",
+                    Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                    BackColor = Color.FromArgb(46, 204, 113),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Location = new Point(30, 660),
+                    Size = new Size(200, 40),
+                    Cursor = Cursors.Hand
+                };
+                btnSaveEnrollments.FlatAppearance.BorderSize = 0;
+                btnSaveEnrollments.Click += BtnSaveEnrollments_Click;
+                this.Controls.Add(btnSaveEnrollments);
+                
+                // Load enrollments
+                LoadEnrollments();
+            }
         }
 
         private void LoadSpecializations()
@@ -404,6 +460,156 @@ namespace SCAIS
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
+        }
+        
+        private void LoadEnrollments()
+        {
+            // Safety check - only load if the grid has been initialized
+            if (dgvEnrollments == null)
+                return;
+                
+            try
+            {
+                DataTable dtEnrollments = administrator.GetStudentEnrollments(studentId);
+                
+                // Clear existing columns and create them manually
+                dgvEnrollments.AutoGenerateColumns = false;
+                dgvEnrollments.Columns.Clear();
+                
+                // Hidden column for enrollment_id
+                DataGridViewTextBoxColumn colEnrollmentId = new DataGridViewTextBoxColumn
+                {
+                    Name = "enrollment_id",
+                    DataPropertyName = "enrollment_id",
+                    Visible = false
+                };
+                dgvEnrollments.Columns.Add(colEnrollmentId);
+                
+                // Course Code column (read-only)
+                DataGridViewTextBoxColumn colCourseCode = new DataGridViewTextBoxColumn
+                {
+                    Name = "course_code",
+                    DataPropertyName = "course_code",
+                    HeaderText = "Course Code",
+                    ReadOnly = true,
+                    Width = 100
+                };
+                dgvEnrollments.Columns.Add(colCourseCode);
+                
+                // Course Name column (read-only)
+                DataGridViewTextBoxColumn colCourseName = new DataGridViewTextBoxColumn
+                {
+                    Name = "course_name",
+                    DataPropertyName = "course_name",
+                    HeaderText = "Course Name",
+                    ReadOnly = true,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                };
+                dgvEnrollments.Columns.Add(colCourseName);
+                
+                // Credits column (read-only)
+                DataGridViewTextBoxColumn colCredits = new DataGridViewTextBoxColumn
+                {
+                    Name = "credit_hours",
+                    DataPropertyName = "credit_hours",
+                    HeaderText = "Credits",
+                    ReadOnly = true,
+                    Width = 70
+                };
+                dgvEnrollments.Columns.Add(colCredits);
+                
+                // Semester column (read-only)
+                DataGridViewTextBoxColumn colSemester = new DataGridViewTextBoxColumn
+                {
+                    Name = "semester",
+                    DataPropertyName = "semester",
+                    HeaderText = "Semester",
+                    ReadOnly = true,
+                    Width = 150
+                };
+                dgvEnrollments.Columns.Add(colSemester);
+                
+                // Status ComboBox column (editable)
+                DataGridViewComboBoxColumn colStatus = new DataGridViewComboBoxColumn
+                {
+                    Name = "status",
+                    DataPropertyName = "status",
+                    HeaderText = "Status",
+                    Width = 120
+                };
+                colStatus.Items.AddRange(new string[] { "Pending", "InProgress", "Completed" });
+                dgvEnrollments.Columns.Add(colStatus);
+                
+                // Grade ComboBox column (editable)
+                DataGridViewComboBoxColumn colGrade = new DataGridViewComboBoxColumn
+                {
+                    Name = "grade",
+                    DataPropertyName = "grade",
+                    HeaderText = "Grade",
+                    Width = 100
+                };
+                colGrade.Items.AddRange(new string[] { "", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "F" });
+                dgvEnrollments.Columns.Add(colGrade);
+                
+                // Hidden column for approval_status
+                DataGridViewTextBoxColumn colApprovalStatus = new DataGridViewTextBoxColumn
+                {
+                    Name = "approval_status",
+                    DataPropertyName = "approval_status",
+                    Visible = false
+                };
+                dgvEnrollments.Columns.Add(colApprovalStatus);
+                
+                // Bind the data
+                dgvEnrollments.DataSource = dtEnrollments;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading enrollments: {ex.Message}\n\nStack Trace: {ex.StackTrace}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        private void BtnSaveEnrollments_Click(object sender, EventArgs e)
+        {
+            // Safety check
+            if (dgvEnrollments == null)
+                return;
+                
+            try
+            {
+                int updatedCount = 0;
+                
+                foreach (DataGridViewRow row in dgvEnrollments.Rows)
+                {
+                    if (row.IsNewRow) continue;
+                    
+                    int enrollmentId = Convert.ToInt32(row.Cells["enrollment_id"].Value);
+                    string status = row.Cells["status"].Value?.ToString() ?? "Pending";
+                    string grade = row.Cells["grade"].Value?.ToString() ?? "";
+                    
+                    if (administrator.UpdateEnrollmentStatusAndGrade(enrollmentId, status, grade))
+                    {
+                        updatedCount++;
+                    }
+                }
+                
+                if (updatedCount > 0)
+                {
+                    MessageBox.Show($"Successfully updated {updatedCount} enrollment(s)!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("No enrollments were updated.", "Information",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving enrollments: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
