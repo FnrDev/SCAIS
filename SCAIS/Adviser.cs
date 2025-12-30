@@ -328,49 +328,27 @@ public class Adviser : User
 
 	public void ApproveCoursePlan(int enrollmentId, string remarks = "")
 	{
-		ProcessEnrollmentApproval(enrollmentId, "Approved", remarks);
+		try
+		{
+			EnrollmentService enrollmentService = new EnrollmentService();
+			enrollmentService.ApproveEnrollment(enrollmentId, adviserId, remarks);
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Error approving course plan: {ex.Message}");
+		}
 	}
 
 	public void RejectCoursePlan(int enrollmentId, string remarks = "")
 	{
-		ProcessEnrollmentApproval(enrollmentId, "Rejected", remarks);
-	}
-
-	private void ProcessEnrollmentApproval(int enrollmentId, string status, string remarks = "")
-	{
 		try
 		{
-			DatabaseConnection dbConn = DatabaseConnection.Instance;
-			SqlConnection conn = dbConn.GetConnection();
-
-			string query = @"UPDATE enrollments 
-                            SET approval_status = @status, 
-                                adviser_id = @adviserId,
-                                approval_date = @approvalDate,
-                                adviser_remarks = @remarks
-                            WHERE enrollment_id = @enrollmentId";
-
-			using (SqlCommand cmd = new SqlCommand(query, conn))
-			{
-				cmd.Parameters.AddWithValue("@status", status);
-				cmd.Parameters.AddWithValue("@adviserId", adviserId);
-				cmd.Parameters.AddWithValue("@approvalDate", DateTime.Now);
-				cmd.Parameters.AddWithValue("@remarks", string.IsNullOrWhiteSpace(remarks) ? (object)DBNull.Value : remarks);
-				cmd.Parameters.AddWithValue("@enrollmentId", enrollmentId);
-
-				dbConn.Open();
-				int rowsAffected = cmd.ExecuteNonQuery();
-				dbConn.Close();
-
-				if (rowsAffected == 0)
-				{
-					throw new Exception("No enrollment found to update.");
-				}
-			}
+			EnrollmentService enrollmentService = new EnrollmentService();
+			enrollmentService.RejectEnrollment(enrollmentId, adviserId, remarks);
 		}
 		catch (Exception ex)
 		{
-			throw new Exception($"Error processing approval: {ex.Message}");
+			throw new Exception($"Error rejecting course plan: {ex.Message}");
 		}
 	}
 

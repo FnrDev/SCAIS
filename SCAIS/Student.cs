@@ -190,37 +190,28 @@ public class Student : User
             if (semesterId == 0)
                 throw new Exception("No active semester found.");
 
-            string insertQuery = @"INSERT INTO enrollments (student_id, course_id, semester_id, status, approval_status, enrollment_date)
-                                   VALUES (@studentId, @courseId, @semesterId, 'Pending', 'PendingApproval', GETDATE())";
+            // Use the EnrollmentService with Builder pattern
+            EnrollmentService enrollmentService = new EnrollmentService();
 
-            using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+            foreach (int courseId in courseIds)
             {
-                cmd.Parameters.Add("@studentId", SqlDbType.Int);
-                cmd.Parameters.Add("@courseId", SqlDbType.Int);
-                cmd.Parameters.Add("@semesterId", SqlDbType.Int);
-
-                dbConn.Open();
-
-                foreach (int courseId in courseIds)
+                try
                 {
-                    try
-                    {
-                        cmd.Parameters["@studentId"].Value = studentId;
-                        cmd.Parameters["@courseId"].Value = courseId;
-                        cmd.Parameters["@semesterId"].Value = semesterId;
-
-                        cmd.ExecuteNonQuery();
-                        inserted++;
-                    }
-                    catch (SqlException sqlEx)
-                    {
-                        // unique_enrollment or other DB constraint -> skip and count
-                        skipped++;
-                        System.Diagnostics.Debug.WriteLine($"SubmitCoursePreferences - skipped course {courseId}: {sqlEx.Message}");
-                    }
+                    enrollmentService.CreateEnrollment(studentId, courseId, semesterId);
+                    inserted++;
                 }
-
-                dbConn.Close();
+                catch (SqlException sqlEx)
+                {
+                    // unique_enrollment or other DB constraint -> skip and count
+                    skipped++;
+                    System.Diagnostics.Debug.WriteLine($"SubmitCoursePreferences - skipped course {courseId}: {sqlEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // Other exceptions -> skip and count
+                    skipped++;
+                    System.Diagnostics.Debug.WriteLine($"SubmitCoursePreferences - skipped course {courseId}: {ex.Message}");
+                }
             }
 
             return (inserted, skipped);

@@ -15,7 +15,9 @@ using System.IO;
 
 public class Enrollment {
 
+	private int? adviserId;
 	private string adviserRemarks;
+	private DateTime? approvalDate;
 	private string approvalStatus;
 	private int courseId;
 	private DateTime enrollmentDate;
@@ -26,6 +28,73 @@ public class Enrollment {
 	private int studentId;
 	public Course m_Course;
 	public Semester m_Semester;
+
+	// Public properties for builder pattern
+	public int? AdviserId
+	{
+		get { return adviserId; }
+		set { adviserId = value; }
+	}
+
+	public string AdviserRemarks
+	{
+		get { return adviserRemarks; }
+		set { adviserRemarks = value; }
+	}
+
+	public DateTime? ApprovalDate
+	{
+		get { return approvalDate; }
+		set { approvalDate = value; }
+	}
+
+	public string ApprovalStatus
+	{
+		get { return approvalStatus; }
+		set { approvalStatus = value; }
+	}
+
+	public int CourseId
+	{
+		get { return courseId; }
+		set { courseId = value; }
+	}
+
+	public DateTime EnrollmentDate
+	{
+		get { return enrollmentDate; }
+		set { enrollmentDate = value; }
+	}
+
+	public int EnrollmentId
+	{
+		get { return enrollmentId; }
+		set { enrollmentId = value; }
+	}
+
+	public string Grade
+	{
+		get { return grade; }
+		set { grade = value; }
+	}
+
+	public int SemesterId
+	{
+		get { return semesterId; }
+		set { semesterId = value; }
+	}
+
+	public string Status
+	{
+		get { return status; }
+		set { status = value; }
+	}
+
+	public int StudentId
+	{
+		get { return studentId; }
+		set { studentId = value; }
+	}
 
 	public Enrollment(){
 
