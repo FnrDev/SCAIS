@@ -26,17 +26,8 @@ namespace SCAIS.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute(@"
-				<?xml version=""1.0"" encoding=""utf-16""?>
-				<SerializableConnectionString xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
-				xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
-				<ConnectionString>
-				Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\SCAISDB.mdf;Integrated Security=True;Connect Timeout=30
-
-				</ConnectionString>
-				<ProviderName>System.Data.SqlClient</ProviderName>
-				</SerializableConnectionString>
-			")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\\SCAISDB.mdf;I" +
+            "ntegrated Security=True;Connect Timeout=30")]
         public string SCAISDBConnectionString {
             get {
                 return ((string)(this["SCAISDBConnectionString"]));

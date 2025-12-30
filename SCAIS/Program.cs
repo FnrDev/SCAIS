@@ -11,8 +11,9 @@ namespace SCAIS
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Database is now in the project root folder, not using DataDirectory
-            // All changes will persist in C:\Users\ahmed-pc\Documents\SCAIS\SCAIS\SCAISDB.mdf
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string projectRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(baseDirectory, @"..\..\"));
+            AppDomain.CurrentDomain.SetData("DataDirectory", projectRoot);
 
             Application.Run(new login());
         }

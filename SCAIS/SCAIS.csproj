@@ -148,6 +148,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Properties\Settings_new.settings" />
     <None Include="SCAISDBDataSet.xsc">
       <DependentUpon>SCAISDBDataSet.xsd</DependentUpon>
     </None>
@@ -166,6 +167,7 @@
   <ItemGroup>
     <Content Include="CheckLastLogin.sql" />
     <Content Include="DATABASE_FIX_INSTRUCTIONS.txt" />
+    <Content Include="DATABASE_SETUP_README.txt" />
     <Content Include="QUICK_SETUP_CHECKLIST.txt" />
     <Content Include="SCAISDB.mdf" />
     <Content Include="SCAISDB_log.ldf">
